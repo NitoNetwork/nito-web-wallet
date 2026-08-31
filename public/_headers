@@ -1,0 +1,17 @@
+/*
+  Cache-Control: no-store
+  Content-Security-Policy: default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' 'wasm-unsafe-eval'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss://electrum1.nito.network:50005 wss://electrum1.nitopool.fr:50005; worker-src 'self'; manifest-src 'self'; media-src 'none'; upgrade-insecure-requests
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Origin-Agent-Cluster: ?1
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Referrer-Policy: no-referrer
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  X-DNS-Prefetch-Control: off
+  X-Frame-Options: DENY
+  X-Permitted-Cross-Domain-Policies: none
+
+/wasm/*
+  Cache-Control: no-store

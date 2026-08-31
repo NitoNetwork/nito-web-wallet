@@ -1,0 +1,51 @@
+[Unit]
+Description=NITO Web Wallet
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=nito-wallet
+Group=nito-wallet
+WorkingDirectory=/opt/nito-wallet/current
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+ExecStartPre=/usr/bin/test -r /opt/nito-wallet/current/server.js
+ExecStartPre=/usr/bin/test -r /opt/nito-wallet/current/ARTIFACTS.sha256
+ExecStart=/usr/local/bin/node /opt/nito-wallet/current/server.js
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0027
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+TasksMax=128
+MemoryMax=1G
+LimitNOFILE=4096
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nito-wallet
+
+[Install]
+WantedBy=multi-user.target

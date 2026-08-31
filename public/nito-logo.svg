@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Nito</title>
+  <path fill="#e9b900" d="M144 203h56v228h-56z"/>
+  <path fill="#3897ef" d="M102 108h60v323h-60zM326 86h82v255h-82z"/>
+  <path fill="#3897ef" d="M70 86h118l258 345H326z"/>
+  <path fill="#2484df" d="m102 108 42 58v265h-42z" opacity=".65"/>
+</svg>
