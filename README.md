@@ -14,7 +14,7 @@ NITO Web Wallet is a self-custodial browser wallet for transparent NITO transact
 - Receive with Legacy, P2SH, Bech32, or Taproot HD addresses; Taproot is the default.
 - Aggregate supported transparent UTXOs into one spendable balance.
 - Send to multiple recipients, consolidate UTXOs, and attempt RBF cancellation.
-- Track unconfirmed, confirmed, and immature coinbase balances through Electrum.
+- Track unconfirmed, confirmed, and immature coinbase balances.
 - Use nine interface languages without restarting or rescanning the wallet.
 
 ## Security model
