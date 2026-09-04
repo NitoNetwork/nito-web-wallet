@@ -103,6 +103,7 @@ describe('wallet languages', () => {
       'app/crypto-core-status.tsx',
       'components/recovery-phrase-copy.tsx',
       'components/wallet-language-select.tsx',
+      'components/wallet-utxo-list.tsx',
     ];
     const allowedBrandText = new Set(['NITO', 'Web Wallet']);
 
@@ -194,6 +195,7 @@ describe('wallet languages', () => {
       'components/recovery-phrase-copy.tsx',
       'components/wallet-language-select.tsx',
       'src/i18nError.ts',
+      'components/wallet-utxo-list.tsx',
     ];
     const source = sourceFiles
       .map((file) => readFileSync(resolve(process.cwd(), file), 'utf8'))

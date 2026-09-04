@@ -362,31 +362,117 @@ const selectSpend = ({
   outputs,
   feePerVbyte,
   changeAddress,
+  optimizeSelection = true,
 }: {
   spendable: PreparedSpendableInput[];
   outputs: { address: string; amount: bigint }[];
   feePerVbyte: bigint;
   changeAddress: string;
+  optimizeSelection?: boolean;
 }) => {
   validateFeeRate(feePerVbyte);
-  const inputs = spendable.map(({ input }) => cloneInput(input)) as Parameters<
+  // Stable ordering makes preview/signing independent of Electrum response order.
+  const ordered = optimizeSelection
+    ? [...spendable].sort((left, right) => {
+        const a = left.signer.txid.toLowerCase();
+        const b = right.signer.txid.toLowerCase();
+        return (
+          (a < b ? -1 : a > b ? 1 : 0) || left.signer.vout - right.signer.vout
+        );
+      })
+    : spendable;
+  const inputs = ordered.map(({ input }) => cloneInput(input)) as Parameters<
     typeof btc.selectUTXO
   >[0];
-  return btc.selectUTXO(
-    inputs,
-    outputs.map((output) => ({
-      address: output.address,
-      amount: output.amount,
-    })),
-    'default',
-    {
-      changeAddress,
-      feePerByte: feePerVbyte,
-      bip69: true,
-      createTx: true,
-      network: NITO_SIGNER_NETWORK,
-    },
-  );
+  const options = {
+    changeAddress,
+    feePerByte: feePerVbyte,
+    bip69: true,
+    createTx: false,
+    network: NITO_SIGNER_NETWORK,
+  };
+  const select = (
+    candidates: typeof inputs,
+    strategy: 'default' | 'accumBiggest',
+  ) => {
+    const selection = btc.selectUTXO(candidates, outputs, strategy, options);
+    if (!selection) return undefined;
+    const { fee } = selection;
+    if (fee === undefined) throw new TransparentSendError('insufficient-funds');
+    return { ...selection, fee };
+  };
+  let best = select(inputs, 'default');
+  if (!best) return undefined;
+
+  if (optimizeSelection && inputs.length > 1) {
+    const candidates = [best];
+    const totalInput = (selection: NonNullable<typeof best>) =>
+      selection.fee +
+      selection.outputs.reduce((sum, output) => sum + output.amount, BigInt(0));
+    const consider = (candidate: typeof best) => {
+      if (!candidate || !best) return;
+      candidates.push(candidate);
+      // Compare the actual estimated miner fee, including any discarded dust.
+      if (
+        candidate.fee < best.fee ||
+        (candidate.fee === best.fee &&
+          (candidate.inputs.length < best.inputs.length ||
+            (candidate.inputs.length === best.inputs.length &&
+              totalInput(candidate) < totalInput(best))))
+      ) {
+        best = candidate;
+      }
+    };
+    // An exact-match attempt can accumulate many inputs. Compare the ordinary
+    // funding fallback too; fewer inputs may cost less despite creating change.
+    consider(select(inputs, 'accumBiggest'));
+    const target = outputs.reduce(
+      (sum, output) => sum + output.amount,
+      BigInt(0),
+    );
+    for (let index = 0; index < ordered.length; index += 1) {
+      if (BigInt(ordered[index]!.valueSats) <= target) continue;
+      consider(select([inputs[index]!], 'default'));
+    }
+
+    // Anchor the budget to the cheapest complete quote, never to an intermediate
+    // winner: at most 25% extra, capped at 1,000 nitoshis (0.00001 NITO).
+    const relativeMargin = best.fee / BigInt(4);
+    const maximumFee =
+      best.fee +
+      (relativeMargin < BigInt(1_000) ? relativeMargin : BigInt(1_000));
+    const maximumInputs = best.inputs.length;
+    const maximumValue = totalInput(best);
+    for (const candidate of candidates) {
+      // A fee premium must not add inputs or mobilize more funds. Among eligible
+      // quotes, prefer fewer inputs, then the smallest sufficient input total.
+      if (
+        candidate.fee > maximumFee ||
+        candidate.inputs.length > maximumInputs ||
+        totalInput(candidate) > maximumValue
+      )
+        continue;
+      if (
+        candidate.inputs.length < best.inputs.length ||
+        (candidate.inputs.length === best.inputs.length &&
+          (totalInput(candidate) < totalInput(best) ||
+            (totalInput(candidate) === totalInput(best) &&
+              candidate.fee < best.fee)))
+      )
+        best = candidate;
+    }
+  }
+
+  // Build only the winning unsigned template. No keys, network requests or
+  // additional HD address reservations are needed to compare candidates.
+  const tx = new btc.Transaction();
+  for (const input of best.inputs) tx.addInput(input);
+  for (const output of best.outputs) {
+    if ('address' in output)
+      tx.addOutputAddress(output.address, output.amount, NITO_SIGNER_NETWORK);
+    else tx.addOutput(output);
+  }
+  return { ...best, tx };
 };
 
 type CalculateMaxTransparentSendAmountArgs = {
@@ -447,6 +533,7 @@ export const calculateMaxTransparentSendAmount = async (
       })),
       feePerVbyte,
       changeAddress: resolvedChangeAddress,
+      optimizeSelection: false,
     });
     if (selected?.tx) {
       best = {
@@ -673,6 +760,7 @@ const buildTransparentTx = async ({
   signPsbt,
   feePerVbyte = DEFAULT_FEE_PER_VBYTE,
   changeAddress,
+  optimizeSelection = true,
 }: {
   sessionId: string;
   snapshot: TransparentWalletSnapshot;
@@ -680,6 +768,7 @@ const buildTransparentTx = async ({
   signPsbt: TransparentPsbtSigner;
   feePerVbyte?: bigint;
   changeAddress?: string;
+  optimizeSelection?: boolean;
 }): Promise<PreparedTransparentTx> => {
   if (sessionId.trim() === '') {
     throw new TransparentSendError('signing-material-unavailable');
@@ -690,6 +779,7 @@ const buildTransparentTx = async ({
     outputs,
     feePerVbyte,
     changeAddress: resolveChangeAddress(snapshot, changeAddress),
+    optimizeSelection,
   });
   if (!selected?.tx) throw new TransparentSendError('insufficient-funds');
   const sources = selectedSpendables(
@@ -1111,6 +1201,7 @@ const calculateMaxEqualSplit = ({
       outputs,
       feePerVbyte,
       changeAddress: toAddress,
+      optimizeSelection: false,
     });
     if (selected?.tx) {
       best = {
@@ -1265,6 +1356,7 @@ export const buildTransparentConsolidation = async ({
       signPsbt,
       feePerVbyte,
       changeAddress: toAddress,
+      optimizeSelection: false,
     });
     if (
       transaction.inputCount !== planned.inputCount ||

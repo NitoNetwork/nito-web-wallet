@@ -15,7 +15,32 @@ NITO Web Wallet is a self-custodial browser wallet for transparent NITO transact
 - Aggregate supported transparent UTXOs into one spendable balance.
 - Send to multiple recipients, consolidate UTXOs, and attempt RBF cancellation.
 - Track unconfirmed, confirmed, and immature coinbase balances.
+- Browse unspent outputs in My UTXOs, five per page, with owning addresses, address types, live confirmations and local dates.
 - Use nine interface languages without restarting or rescanning the wallet.
+
+## UTXO details
+
+The My UTXOs tab uses the synchronized wallet snapshot, including pending outputs and
+immature mining rewards. Confirmations follow the existing block subscription.
+Confirmed dates are block timestamps, not exact payment arrival times; pending
+dates indicate when this browser session first observed the transaction. Missing
+dates are shown as unavailable. Block headers are fetched with bounded concurrency
+and cached only in memory, shared across outputs from the same block. Changing
+pages or interface language does not request another wallet scan.
+
+## Automatic change
+
+Payments select their change address family using Bitcoin Core's automatic
+recipient-matching policy: Taproot, Bech32, P2SH, then Legacy, restricted to the
+families this wallet can sign. Mixed-recipient payments use the first matching
+family in that order. HD change uses a fresh internal address in the selected
+account; WIF/HEX uses the matching address of the imported key, without Taproot.
+The choice is included in fee estimation and the unsigned preview and remains
+unchanged when signing. It is not based on the type of the spent inputs.
+
+Consolidation and RBF cancellation have no external recipients to match: these
+self-transfers retain an internal Taproot return for HD wallets and Bech32 for
+WIF/HEX. Receiving addresses are unchanged.
 
 ## Security model
 
@@ -63,5 +88,6 @@ npm run version:set -- <major.minor.patch>
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Changelog](CHANGELOG.md)
 - [Security model](docs/SECURITY.md)
 - [Security policy](SECURITY.md)

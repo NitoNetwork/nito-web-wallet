@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
 import { RecoveryPhraseCopy } from '@/components/recovery-phrase-copy';
+import { WalletUtxoList } from '@/components/wallet-utxo-list';
 import type { WalletSessionSummary } from '@/src/crypto/workerProtocol';
 import {
   DEFAULT_HD_RECEIVE_ACCOUNT_KEY,
@@ -75,6 +76,7 @@ import {
   type IssuedHdAddress,
 } from '@/src/wallet/addressManager';
 import { isTransparentUtxoSpendable } from '@/src/wallet/coinbaseMaturity';
+import { changeAccountForWallet } from '@/src/wallet/changePolicy';
 import { shouldOfferMaxForRecipient } from '@/src/wallet/sendRecipientPolicy';
 import {
   acceptedTransactionAddresses,
@@ -163,7 +165,7 @@ type BroadcastReceipt = {
   };
 };
 
-type WalletView = 'home' | 'receive' | 'send' | 'settings';
+type WalletView = 'home' | 'receive' | 'send' | 'utxos' | 'settings';
 
 const satsToInputAmount = (sats: bigint) => {
   const whole = sats / BigInt(100_000_000);
@@ -741,7 +743,9 @@ export function WalletDashboard({
           : parseNitoAmountToSats(recipient.amount),
     }));
 
-  async function ensureSendChange() {
+  async function ensureSendChange(outputs: readonly TransparentSendOutput[]) {
+    const accountKey = changeAccountForWallet(outputs.map((output) => output.address), summary);
+    const changeTemplate = HD_ACCOUNT_TEMPLATES.find((template) => template.key === accountKey)!;
     const controller = controllerRef.current;
     if (!controller) {
       throw Object.assign(new Error('NETWORK_SYNC_FAILED'), {
@@ -760,8 +764,8 @@ export function WalletDashboard({
     if (!summary.hd) {
       const change =
         summary.primaryAddresses.find(
-          (address) => address.scriptType === 'p2wpkh',
-        ) ?? summary.primaryAddresses[0];
+          (address) => address.scriptType === changeTemplate.scriptType,
+        );
       if (!change) throw new TransparentSendError('change-address-unavailable');
       return {
         changeAddress: change.address,
@@ -772,7 +776,7 @@ export function WalletDashboard({
     const manager = addressManagerRef.current;
     if (!manager) throw new TransparentSendError('change-address-unavailable');
     const change = await manager.currentOrReserve(
-      { account: 0, accountKey: 'bech32', branch: 'internal' },
+      { account: 0, accountKey, branch: 'internal' },
       current.record.snapshot.addresses,
     );
     const coveredChange = current.record.snapshot.addresses.some(
@@ -886,7 +890,7 @@ export function WalletDashboard({
     try {
       const outputs = recipientOutputs();
       const feePerVbyte = parseFeeRate();
-      const context = await ensureSendChange();
+      const context = await ensureSendChange(outputs);
       const estimate = await estimateTransparentMultiSend({
         snapshot: context.snapshot,
         outputs,
@@ -925,10 +929,11 @@ export function WalletDashboard({
     setPreparedSend(undefined);
     try {
       const feePerVbyte = parseFeeRate();
-      const context = await ensureSendChange();
+      const outputs = recipientOutputs(targetIndex);
+      const context = await ensureSendChange(outputs);
       const max = await calculateMaxTransparentSendAmount({
         snapshot: context.snapshot,
-        outputs: recipientOutputs(targetIndex),
+        outputs,
         targetIndex,
         feePerVbyte,
         changeAddress: context.changeAddress,
@@ -1355,6 +1360,7 @@ export function WalletDashboard({
         ]
       : []),
     { key: 'send' as const, label: t('nav.send'), icon: ArrowUpRight },
+    { key: 'utxos' as const, label: t('nav.utxos'), icon: Database },
     { key: 'settings' as const, label: t('nav.settings'), icon: Settings },
   ];
 
@@ -1454,7 +1460,7 @@ export function WalletDashboard({
 
       <nav
         aria-label={t('nav.aria')}
-        className="grid gap-1.5 rounded-3xl border border-sky-200/[0.10] bg-[#061120] p-1.5"
+        className="grid gap-1 rounded-3xl border border-sky-200/[0.10] bg-[#061120] p-1.5 sm:gap-1.5"
         style={{
           gridTemplateColumns: `repeat(${navigation.length}, minmax(0, 1fr))`,
         }}
@@ -1466,13 +1472,15 @@ export function WalletDashboard({
             aria-label={label}
             aria-current={activeView === key ? 'page' : undefined}
             onClick={() => setActiveView(key)}
-            className={`group/nav flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-2 text-xs font-bold outline-none transition-all duration-200 ${activeView === key ? 'border-sky-300/20 bg-[#1769c2] text-white' : 'border-transparent text-slate-500 hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-slate-200 focus-visible:ring-4 focus-visible:ring-sky-300/10'}`}
+            className={`group/nav flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-0.5 py-2 text-[9px] font-bold tracking-tight outline-none transition-all duration-200 min-[375px]:text-[10px] sm:text-xs lg:min-h-12 lg:flex-row lg:gap-2 lg:px-2 ${activeView === key ? 'border-sky-300/20 bg-[#1769c2] text-white' : 'border-transparent text-slate-500 hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-slate-200 focus-visible:ring-4 focus-visible:ring-sky-300/10'}`}
           >
             <Icon
-              className="size-4 transition-transform duration-200 group-hover/nav:scale-110"
+              className="size-4 shrink-0 transition-transform duration-200 group-hover/nav:scale-110"
               aria-hidden="true"
             />
-            <span className="hidden sm:inline">{label}</span>
+            <span className="max-w-full hyphens-auto text-center leading-tight [overflow-wrap:anywhere]">
+              {label}
+            </span>
           </button>
         ))}
       </nav>
@@ -1942,6 +1950,14 @@ export function WalletDashboard({
             </Card>
           ) : null}
         </div>
+      ) : null}
+
+      {activeView === 'utxos' ? (
+        <WalletUtxoList
+          utxos={snapshot.utxos}
+          addresses={snapshot.addresses}
+          blockHeight={network?.blockHeight ?? 0}
+        />
       ) : null}
 
       {activeView === 'receive' ? (

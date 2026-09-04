@@ -1,6 +1,7 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import * as btc from '@scure/btc-signer';
 import { bech32, bech32m } from 'bech32';
+import { UtxoMetadataCache } from './utxoMetadata';
 
 import {
   NITO_ELECTRUM_SERVERS,
@@ -34,6 +35,8 @@ export type ElectrumUtxo = {
   confirmations: number;
   isCoinbase?: boolean;
   rawTx?: string;
+  blockTime?: number;
+  firstSeenAt?: number;
 };
 
 export type ElectrumHistoryEntry = {
@@ -556,6 +559,9 @@ export class NitoElectrumClient {
   private reconnectEnabled = false;
   private hasConnectedBefore = false;
   private blockHeaderFingerprint = '';
+  private readonly utxoMetadata = new UtxoMetadataCache((height) =>
+    this.request<unknown>('blockchain.block.header', [height]),
+  );
 
   connected = false;
   blockHeight = 0;
@@ -679,6 +685,7 @@ export class NitoElectrumClient {
   }
 
   disconnect(reason: Error = new Error('ElectrumX connection closed.')) {
+    this.utxoMetadata.clear();
     this.reconnectEnabled = false;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -688,6 +695,7 @@ export class NitoElectrumClient {
   }
 
   private closeSocket(reason: Error) {
+    this.utxoMetadata.invalidateBlocks();
     const socket = this.socket;
     this.socket = null;
     this.connected = false;
@@ -849,7 +857,7 @@ export class NitoElectrumClient {
       await this.request<unknown>('blockchain.scripthash.listunspent', [scripthash]),
     );
 
-    return utxos.map((utxo) => ({
+    return this.utxoMetadata.annotate(utxos.map((utxo) => ({
       txid: utxo.tx_hash,
       vout: utxo.tx_pos,
       valueSats: utxo.value,
@@ -859,7 +867,7 @@ export class NitoElectrumClient {
         utxo.height > 0 && this.blockHeight > 0
           ? Math.max(0, this.blockHeight - utxo.height + 1)
           : 0,
-    }));
+    })));
   }
 
   async getAddressHistory(address: string): Promise<ElectrumHistoryEntry[]> {
@@ -1218,6 +1226,9 @@ export class NitoElectrumClient {
       const previousFingerprint = this.blockHeaderFingerprint;
       const nextHeight = header.height;
       const nextFingerprint = header.hex ?? previousFingerprint;
+      if (nextHeight < previousHeight || (nextHeight === previousHeight && nextFingerprint !== previousFingerprint)) {
+        this.utxoMetadata.invalidateBlocks();
+      }
       this.blockHeight = nextHeight;
       this.blockHeaderFingerprint = nextFingerprint;
 

@@ -26,9 +26,13 @@ During an unlocked session, Electrum address subscriptions update known addresse
 
 Preview, signing, and broadcast are separate steps. The signer receives the exact owner and derivation metadata for each selected UTXO. The transaction ID returned by Electrum must match the locally calculated transaction ID.
 
+Ordinary payments compare the default funding selection, its largest-first fallback, and each individually sufficient UTXO. The baseline is the lowest estimated total miner fee (including discarded dust), with ties resolved by input count and total input value. A more proportionate selection may cost up to 25% extra, rounded down and capped at 1,000 nitoshis (0.00001 NITO). This budget is fixed against the cheapest quote, never increased as candidates are considered. Eligible alternatives cannot increase input count or total input value relative to the baseline; they are ranked by input count, then total input value, then fee. This favors a smaller sufficient UTXO across address families when the additional cost is small, without blindly accumulating small outputs or paying excessive fees.
+
+Script-specific input and change costs are calculated by the transaction library. The search is bounded, not an exhaustive subset optimizer or a reproduction of Bitcoin Core coin selection. Preview and signing use the same deterministic policy and display the full selected fee, with no additional network requests. Pending and immature outputs remain ineligible; MAX and consolidation retain their existing funding strategy, and RBF retains the original inputs.
+
 Accepted broadcasts are projected into the in-memory snapshot immediately and reconciled with Electrum. RBF cancellation tracks both competing transactions: the dialog confirms the replacement when it wins, or reports failure and links to the original transaction when the original confirms first.
 
-HD change, consolidation, and RBF return outputs use internal Taproot addresses. Single-key wallets use Bech32 return outputs because Taproot is intentionally unavailable for that source.
+Payment change uses the highest-priority supported recipient address family: Taproot, Bech32, P2SH, then Legacy. HD wallets derive internal change addresses; single-key wallets use the matching address of the imported key and exclude Taproot. Consolidation and RBF cancellation retain internal Taproot returns for HD wallets and Bech32 returns for single-key wallets.
 
 ## Build output
 
