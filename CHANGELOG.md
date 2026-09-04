@@ -2,6 +2,7 @@
 
 ## 1.1.0 — 2026-09-04
 
+- Keep the complete home balance and currency on one line, adapting to screen width and font changes without rounding or truncating amounts.
 - Add a dedicated My UTXOs tab with five outputs per page and direct page selection.
 - Show each output's owning address, address family, local timestamp, confirmations, and spendability, including pending payments and immature mining rewards.
 - Keep UTXO details updated through the existing synchronization and block subscriptions.

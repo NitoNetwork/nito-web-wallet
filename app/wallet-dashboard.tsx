@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
 import { RecoveryPhraseCopy } from '@/components/recovery-phrase-copy';
+import { WalletBalance } from '@/components/wallet-balance';
 import { WalletUtxoList } from '@/components/wallet-utxo-list';
 import type { WalletSessionSummary } from '@/src/crypto/workerProtocol';
 import {
@@ -1745,10 +1746,7 @@ export function WalletDashboard({
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
                   {t('home.totalBalance')}
                 </p>
-                <p className="mt-4 bg-gradient-to-b from-white to-slate-300 bg-clip-text font-mono text-4xl font-black tracking-[-0.045em] text-transparent sm:text-6xl">
-                  {formatNitoAmount(snapshot.balanceSats)}
-                  <span className="ml-2 text-base text-slate-500">NITO</span>
-                </p>
+                <WalletBalance satoshis={snapshot.balanceSats} />
                 {snapshot.spendableSats !== snapshot.balanceSats ? (
                   <p className="mt-3 text-xs text-slate-500">
                     {t('home.spendable', {
