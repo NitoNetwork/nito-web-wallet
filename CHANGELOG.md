@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 — 2026-09-08
+
+- Display the selected receive address's HD index.
+- Choose the lowest unused receive index, skipping addresses already issued during the session.
+- Verify newly discovered receive addresses before presenting them as unused, and serialize address reservations.
+- Explain address reuse and privacy in all nine interface languages.
+
 ## 1.1.0 — 2026-09-04
 
 - Keep the complete home balance and currency on one line, adapting to screen width and font changes without rounding or truncating amounts.

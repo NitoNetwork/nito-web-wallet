@@ -615,41 +615,57 @@ export function WalletDashboard({
     setLocalError(undefined);
     setNotice(undefined);
     try {
-      const issued = await manager.reserveNew(
-        selectedSequence,
-        snapshot.addresses,
-      );
-      if (addressOperationRef.current !== operation) return;
-      setIssuedAddress(issued);
-      const alreadyCovered = snapshot.addresses.some(
-        (address) =>
-          address.ownerKind === 'hd' &&
-          address.account === issued.account &&
-          address.accountKey === issued.accountKey &&
-          address.branch === issued.branch &&
-          address.index === issued.index &&
-          address.path === issued.path &&
-          address.address === issued.address,
-      );
-      if (alreadyCovered) {
+      let knownAddresses = snapshot.addresses;
+      while (addressOperationRef.current === operation) {
+        const issued = await manager.reserveNew(
+          selectedSequence,
+          knownAddresses,
+        );
+        if (addressOperationRef.current !== operation) return;
+        const alreadyCovered = knownAddresses.some(
+          (address) =>
+            address.ownerKind === 'hd' &&
+            address.account === issued.account &&
+            address.accountKey === issued.accountKey &&
+            address.branch === issued.branch &&
+            address.index === issued.index &&
+            address.path === issued.path &&
+            address.address === issued.address,
+        );
+        if (alreadyCovered) {
+          setIssuedAddress(issued);
+          setNotice(
+            t('notice.addressReady', {
+              family: familyFor(selectedFamily).label,
+              index: issued.index,
+            }),
+          );
+          return;
+        }
+        const refreshed = await controllerRef.current?.refresh();
+        if (addressOperationRef.current !== operation) return;
+        if (refreshed?.status !== 'ready' || !refreshed.record) {
+          setLocalError(t('receive.syncRequired'));
+          return;
+        }
+        knownAddresses = refreshed.record.snapshot.addresses;
+        const checked = knownAddresses.find(
+          (address) => address.address === issued.address,
+        );
+        if (!checked) {
+          setLocalError(t('receive.syncRequired'));
+          return;
+        }
+        if (checked.used) continue;
+        setIssuedAddress(issued);
         setNotice(
-          t('notice.addressReady', {
+          t('notice.addressReservedScanned', {
             family: familyFor(selectedFamily).label,
             index: issued.index,
           }),
         );
         return;
       }
-      const refreshed = await controllerRef.current?.refresh();
-      if (addressOperationRef.current !== operation) return;
-      setNotice(
-        refreshed?.status === 'ready'
-          ? t('notice.addressReservedScanned', {
-              family: familyFor(selectedFamily).label,
-              index: issued.index,
-            })
-          : t('notice.addressReservedReconnect', { index: issued.index }),
-      );
     } catch (caught: unknown) {
       if (addressOperationRef.current === operation)
         setLocalError(translateWalletError(caught, t));
@@ -745,8 +761,13 @@ export function WalletDashboard({
     }));
 
   async function ensureSendChange(outputs: readonly TransparentSendOutput[]) {
-    const accountKey = changeAccountForWallet(outputs.map((output) => output.address), summary);
-    const changeTemplate = HD_ACCOUNT_TEMPLATES.find((template) => template.key === accountKey)!;
+    const accountKey = changeAccountForWallet(
+      outputs.map((output) => output.address),
+      summary,
+    );
+    const changeTemplate = HD_ACCOUNT_TEMPLATES.find(
+      (template) => template.key === accountKey,
+    )!;
     const controller = controllerRef.current;
     if (!controller) {
       throw Object.assign(new Error('NETWORK_SYNC_FAILED'), {
@@ -763,10 +784,9 @@ export function WalletDashboard({
       });
     }
     if (!summary.hd) {
-      const change =
-        summary.primaryAddresses.find(
-          (address) => address.scriptType === changeTemplate.scriptType,
-        );
+      const change = summary.primaryAddresses.find(
+        (address) => address.scriptType === changeTemplate.scriptType,
+      );
       if (!change) throw new TransparentSendError('change-address-unavailable');
       return {
         changeAddress: change.address,
@@ -2045,6 +2065,12 @@ export function WalletDashboard({
                 ) : receiveAddress && receiveQr ? (
                   <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
                     <div>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                        {familyFor(selectedFamily).label}
+                        {receiveIndex !== undefined
+                          ? t('receive.indexSuffix', { index: receiveIndex })
+                          : null}
+                      </p>
                       <p className="break-all font-mono text-sm leading-6 text-sky-100">
                         {receiveAddress}
                       </p>
