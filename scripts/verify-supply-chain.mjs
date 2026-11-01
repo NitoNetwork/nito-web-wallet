@@ -24,9 +24,11 @@ for (const group of ['dependencies', 'devDependencies']) {
 }
 
 const allowedLifecycleScripts = new Map([
-  ['node_modules/esbuild', '0.28.1'],
+  ['node_modules/@cloudflare/vite-plugin/node_modules/esbuild', '0.28.1'],
   ['node_modules/fsevents', '2.3.3'],
-  ['node_modules/workerd', '1.20260828.1'],
+  ['node_modules/workerd', '1.20260910.1'],
+  ['node_modules/wrangler/node_modules/esbuild', '0.28.1'],
+  ['node_modules/wrangler/node_modules/workerd', '1.20260911.1'],
 ]);
 let packageCount = 0;
 for (const [path, entry] of Object.entries(lock.packages)) {

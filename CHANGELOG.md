@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-11-01
+
+- Update vulnerable build and runtime dependencies to patched releases while preserving the existing standalone deployment architecture.
+- Replace the Nito logo and all favicon sizes with the new transparent brand artwork.
+- Strengthen standalone smoke tests, supply-chain checks, and reproducible-build validation for the updated dependency tree.
+
 ## 1.1.1 — 2026-09-08
 
 - Display the selected receive address's HD index.

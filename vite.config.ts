@@ -22,6 +22,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import('@cloudflare/vite-plugin');
 
   return {
+    build: { sourcemap: false },
     css: { postcss: { plugins: [tailwindcss()] } },
     server: usePolling
       ? { watch: { useFsEvents: false, usePolling: true } }

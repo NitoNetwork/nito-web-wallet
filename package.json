@@ -1,6 +1,6 @@
 {
   "name": "nito-wallet-web",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -46,22 +46,28 @@
     "vinext": "1.0.0-beta.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.54.2",
-    "@cloudflare/workers-types": "5.20260830.1",
+    "@cloudflare/vite-plugin": "1.54.7",
+    "@cloudflare/workers-types": "5.20261101.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.34",
-    "oxfmt": "0.61.0",
+    "oxfmt": "0.75.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vite": "8.2.2",
-    "vitest": "4.1.10",
-    "wrangler": "4.127.1"
+    "vite": "8.3.5",
+    "vitest": "4.1.12",
+    "wrangler": "4.131.2"
+  },
+  "overrides": {
+    "@vercel/og": "1.0.3",
+    "fflate": "0.7.5",
+    "sharp": "0.35.5",
+    "undici": "7.30.1"
   },
   "type": "module"
 }

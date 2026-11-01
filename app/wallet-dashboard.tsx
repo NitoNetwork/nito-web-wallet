@@ -3022,8 +3022,8 @@ function WalletScanGate({
           alt="Logo NITO"
           className={`mx-auto size-20 ${failed ? '' : 'motion-safe:animate-spin [animation-duration:2.8s]'}`}
           height={80}
-          priority
-          src="/nito-logo.svg"
+          preload
+          src="/nito-256.png"
           width={80}
         />
         <h2 className="mt-6 text-xl font-bold tracking-tight text-white">

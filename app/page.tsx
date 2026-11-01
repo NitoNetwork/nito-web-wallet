@@ -14,8 +14,8 @@ function NitoBrand() {
         alt="Nito"
         className="size-11 rounded-2xl border border-sky-200/[0.12] bg-[#030916] object-contain p-2 transition-transform duration-300 group-hover/brand:-rotate-3 group-hover/brand:scale-105 motion-reduce:transition-none"
         height={40}
-        priority
-        src="/nito-logo.svg"
+        preload
+        src="/nito-256.png"
         width={40}
       />
       <div>

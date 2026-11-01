@@ -128,12 +128,19 @@ try {
       'The standalone HTML still preloads fonts that may remain unused.',
     );
   }
-  if (
-    !/<link\b[^>]*\brel=["'](?:shortcut )?icon["'][^>]*favicon\.svg/u.test(
-      rootHtml,
-    )
-  ) {
-    throw new Error('The standalone HTML does not declare the SVG favicon.');
+  for (const iconName of ['nito-16.png', 'nito-32.png', 'nito-256.png']) {
+    if (!rootHtml.includes(`href="/${iconName}"`)) {
+      throw new Error(
+        `The standalone HTML does not declare the ${iconName} icon.`,
+      );
+    }
+    const iconResponse = await fetch(`${origin}/${iconName}`);
+    if (iconResponse.status !== 200) {
+      throw new Error(`${iconName} returned ${iconResponse.status}.`);
+    }
+    if (iconResponse.headers.get('content-type') !== 'image/png') {
+      throw new Error(`${iconName} is not served as image/png.`);
+    }
   }
 
   const secondRootResponse = await fetch(`${origin}/`);
