@@ -153,6 +153,20 @@ describe('wallet languages', () => {
     );
     expect(source).toContain('target="_blank"');
     expect(source).toContain('rel="noopener noreferrer"');
+    expect(source).toContain('packageManifest.version');
+    expect(source).toContain(
+      '`https://github.com/NitoNetwork/nito-web-wallet/releases/tag/v${WALLET_VERSION}`',
+    );
+    expect(source).toContain(
+      'const WALLET_VERSION_LABEL = `v${WALLET_VERSION}`;',
+    );
+    expect(source).toContain('{WALLET_VERSION_LABEL}');
+  });
+
+  it('translates disabled session locking in every language', () => {
+    for (const catalog of Object.values(MESSAGES)) {
+      expect(catalog['settings.never']).toBeTruthy();
+    }
   });
 
   it('keeps translated source tabs inside narrow mobile grid columns', () => {

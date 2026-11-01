@@ -118,6 +118,7 @@ export const zh = {
   "settings.session": "会话",
   "settings.lock": "无操作后自动锁定",
   "settings.minutes": "{minutes} 分钟",
+  "settings.never": "从不",
   "settings.backgroundLock": "切换标签页后自动锁定",
   "settings.seconds": "{seconds} 秒",
   "settings.languageLabel": "界面语言",

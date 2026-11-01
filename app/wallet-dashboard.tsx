@@ -1548,7 +1548,9 @@ export function WalletDashboard({
                 >
                   {AUTO_LOCK_MINUTE_OPTIONS.map((minutes) => (
                     <option key={minutes} value={minutes}>
-                      {t('settings.minutes', { minutes })}
+                      {minutes === 0
+                        ? t('settings.never')
+                        : t('settings.minutes', { minutes })}
                     </option>
                   ))}
                 </select>
@@ -1574,7 +1576,9 @@ export function WalletDashboard({
                 >
                   {BACKGROUND_LOCK_SECOND_OPTIONS.map((seconds) => (
                     <option key={seconds} value={seconds}>
-                      {t('settings.seconds', { seconds })}
+                      {seconds === 0
+                        ? t('settings.never')
+                        : t('settings.seconds', { seconds })}
                     </option>
                   ))}
                 </select>

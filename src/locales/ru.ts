@@ -118,6 +118,7 @@ export const ru = {
   "settings.session": "Сессия",
   "settings.lock": "Автоматическая блокировка после бездействия",
   "settings.minutes": "{minutes} мин",
+  "settings.never": "Никогда",
   "settings.backgroundLock": "Автоматическая блокировка после смены вкладки",
   "settings.seconds": "{seconds} с",
   "settings.languageLabel": "Язык интерфейса",

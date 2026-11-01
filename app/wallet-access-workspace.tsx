@@ -295,7 +295,7 @@ export function WalletAccessWorkspace() {
   }, [clearEmailCredentialDom, clearEmailCredentialFields]);
 
   useEffect(() => {
-    if (!activeWallet) return;
+    if (!activeWallet || autoLockMinutes === 0) return;
     let timer: ReturnType<typeof setTimeout>;
     const resetTimer = () => {
       clearTimeout(timer);
@@ -348,12 +348,13 @@ export function WalletAccessWorkspace() {
           destroySensitivePage();
           return;
         }
-        hiddenAt = Date.now();
-        clearBackgroundTimer();
         if (backgroundLockSeconds === 0) {
-          destroySensitivePage();
+          hiddenAt = undefined;
+          clearBackgroundTimer();
           return;
         }
+        hiddenAt = Date.now();
+        clearBackgroundTimer();
         backgroundTimer = setTimeout(
           destroySensitivePage,
           backgroundLockSeconds * 1_000,

@@ -1,4 +1,6 @@
-export const AUTO_LOCK_MINUTE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export const AUTO_LOCK_MINUTE_OPTIONS = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+] as const;
 export const BACKGROUND_LOCK_SECOND_OPTIONS = [
   0, 10, 20, 30, 40, 50, 60,
 ] as const;

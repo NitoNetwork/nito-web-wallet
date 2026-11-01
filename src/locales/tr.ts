@@ -118,6 +118,7 @@ export const tr = {
   "settings.session": "Oturum",
   "settings.lock": "Hareketsizlik sonrası otomatik kilit",
   "settings.minutes": "{minutes} dk",
+  "settings.never": "Asla",
   "settings.backgroundLock": "Sekme değişikliğinden sonra otomatik kilit",
   "settings.seconds": "{seconds} sn",
   "settings.languageLabel": "Arayüz dili",

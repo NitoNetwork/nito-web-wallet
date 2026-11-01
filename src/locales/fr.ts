@@ -118,6 +118,7 @@ export const fr = {
   "settings.session": "Session",
   "settings.lock": "Verrouillage automatique après inactivité",
   "settings.minutes": "{minutes} min",
+  "settings.never": "Jamais",
   "settings.backgroundLock": "Verrouillage automatique après changement d’onglet",
   "settings.seconds": "{seconds} sec",
   "settings.languageLabel": "Langue de l’interface",

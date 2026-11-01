@@ -118,6 +118,7 @@ export const de = {
   "settings.session": "Sitzung",
   "settings.lock": "Automatische Sperre nach Inaktivität",
   "settings.minutes": "{minutes} Min.",
+  "settings.never": "Nie",
   "settings.backgroundLock": "Automatische Sperre nach einem Tabwechsel",
   "settings.seconds": "{seconds} Sek.",
   "settings.languageLabel": "Sprache der Oberfläche",

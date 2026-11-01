@@ -116,6 +116,7 @@ export const en = {
   "settings.session": "Session",
   "settings.lock": "Automatic lock after inactivity",
   "settings.minutes": "{minutes} min",
+  "settings.never": "Never",
   "settings.backgroundLock": "Automatic lock after changing tabs",
   "settings.seconds": "{seconds} sec",
   "settings.languageLabel": "Interface language",

@@ -118,6 +118,7 @@ export const es = {
   "settings.session": "Sesión",
   "settings.lock": "Bloqueo automático tras inactividad",
   "settings.minutes": "{minutes} min",
+  "settings.never": "Nunca",
   "settings.backgroundLock": "Bloqueo automático tras cambiar de pestaña",
   "settings.seconds": "{seconds} s",
   "settings.languageLabel": "Idioma de la interfaz",

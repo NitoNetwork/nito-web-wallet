@@ -14,11 +14,16 @@ describe('lock preference storage', () => {
         JSON.stringify({ autoLockMinutes: 8, backgroundLockSeconds: 50 }),
       ),
     ).toEqual({ autoLockMinutes: 8, backgroundLockSeconds: 50 });
+    expect(
+      parseLockPreferences(
+        JSON.stringify({ autoLockMinutes: 0, backgroundLockSeconds: 0 }),
+      ),
+    ).toEqual({ autoLockMinutes: 0, backgroundLockSeconds: 0 });
 
     for (const rejected of [
       null,
       'invalid-json',
-      JSON.stringify({ autoLockMinutes: 0, backgroundLockSeconds: 30 }),
+      JSON.stringify({ autoLockMinutes: -1, backgroundLockSeconds: 30 }),
       JSON.stringify({ autoLockMinutes: 5, backgroundLockSeconds: 5 }),
       JSON.stringify({ autoLockMinutes: '5', backgroundLockSeconds: 30 }),
       JSON.stringify({

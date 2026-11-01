@@ -4,8 +4,13 @@ import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 
 import { WalletLanguageSelect } from '@/components/wallet-language-select';
+import packageManifest from '@/package.json';
 import { LanguageProvider, useI18n } from '@/src/i18n';
 import { WalletAccessWorkspace } from './wallet-access-workspace';
+
+const WALLET_VERSION = packageManifest.version;
+const WALLET_VERSION_LABEL = `v${WALLET_VERSION}`;
+const WALLET_RELEASE_URL = `https://github.com/NitoNetwork/nito-web-wallet/releases/tag/v${WALLET_VERSION}`;
 
 function NitoBrand() {
   return (
@@ -54,7 +59,7 @@ function WalletPage() {
       <WalletAccessWorkspace />
 
       <footer className="mt-auto border-t border-sky-200/[0.08] px-4 py-6 sm:px-6">
-        <div className="mx-auto flex max-w-6xl justify-center">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2">
           <a
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-center text-sm font-semibold text-slate-400 transition-colors hover:text-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             href="https://github.com/NitoNetwork/nito-web-wallet"
@@ -63,6 +68,18 @@ function WalletPage() {
           >
             <span>{t('footer.officialRepository')}</span>
             <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
+          </a>
+          <span aria-hidden="true" className="text-slate-700">
+            {'·'}
+          </span>
+          <a
+            aria-label={WALLET_VERSION_LABEL}
+            className="inline-flex min-h-11 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate-500 transition-colors hover:text-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            href={WALLET_RELEASE_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {WALLET_VERSION_LABEL}
           </a>
         </div>
       </footer>

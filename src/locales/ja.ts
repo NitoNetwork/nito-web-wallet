@@ -118,6 +118,7 @@ export const ja = {
   "settings.session": "セッション",
   "settings.lock": "操作がない場合の自動ロック",
   "settings.minutes": "{minutes}分",
+  "settings.never": "しない",
   "settings.backgroundLock": "タブ切り替え後の自動ロック",
   "settings.seconds": "{seconds}秒",
   "settings.languageLabel": "表示言語",

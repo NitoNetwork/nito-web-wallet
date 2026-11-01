@@ -118,6 +118,7 @@ export const pt = {
   "settings.session": "Sessão",
   "settings.lock": "Bloqueio automático após inatividade",
   "settings.minutes": "{minutes} min",
+  "settings.never": "Nunca",
   "settings.backgroundLock": "Bloqueio automático após mudar de separador",
   "settings.seconds": "{seconds} s",
   "settings.languageLabel": "Idioma da interface",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 — 2026-11-01
+
+- Display the current wallet version in the footer with a direct link to its matching GitHub release tag.
+- Allow inactivity and tab-change session locking to be disabled with a translated “Never” option.
+- Keep disabled lock preferences in the same browser-only settings entry without storing any additional wallet data.
+
 ## 1.1.2 — 2026-11-01
 
 - Update vulnerable build and runtime dependencies to patched releases while preserving the existing standalone deployment architecture.
