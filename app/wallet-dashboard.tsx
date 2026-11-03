@@ -127,6 +127,7 @@ type WalletDashboardProps = {
   revealMnemonic: MnemonicReveal;
   onAutoLockMinutesChange: (minutes: AutoLockMinutes) => void;
   onBackgroundLockSecondsChange: (seconds: BackgroundLockSeconds) => void;
+  onSensitiveRevealChange: (revealed: boolean) => void;
   onLock: () => void | Promise<void>;
 };
 
@@ -233,6 +234,7 @@ export function WalletDashboard({
   revealMnemonic,
   onAutoLockMinutesChange,
   onBackgroundLockSecondsChange,
+  onSensitiveRevealChange,
   onLock,
 }: WalletDashboardProps) {
   const { t } = useI18n();
@@ -300,6 +302,15 @@ export function WalletDashboard({
     null,
   );
   const sendErrorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    onSensitiveRevealChange(Boolean(revealedMnemonic));
+  }, [onSensitiveRevealChange, revealedMnemonic]);
+
+  useEffect(
+    () => () => onSensitiveRevealChange(false),
+    [onSensitiveRevealChange],
+  );
 
   useEffect(() => {
     if (!revealedMnemonic) return;

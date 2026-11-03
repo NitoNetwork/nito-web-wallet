@@ -11,6 +11,10 @@ const workerSource = readFileSync(
   resolve(process.cwd(), 'src/crypto/crypto.worker.ts'),
   'utf8',
 );
+const dashboardSource = readFileSync(
+  resolve(process.cwd(), 'app/wallet-dashboard.tsx'),
+  'utf8',
+);
 
 describe('seed lifecycle policy', () => {
   it('makes generated-phrase verification one-way and Worker-validated', () => {
@@ -22,17 +26,24 @@ describe('seed lifecycle policy', () => {
     expect(accessSource).toContain('wordIndexes: pendingCreation.wordIndexes');
   });
 
-  it('destroys creation sessions when the page or window is left', () => {
-    expect(accessSource).toContain('if (!activeWallet && !pendingCreation) return;');
-    expect(accessSource).toContain("window.addEventListener('pagehide', destroySensitivePage)");
-    expect(accessSource).toContain("window.addEventListener('pageshow', restoreFromPageCache)");
-    expect(accessSource).toContain("window.addEventListener('blur', blurPendingBackup)");
+  it('reports recovery-phrase display as a sensitive background state', () => {
+    expect(dashboardSource).toContain(
+      'onSensitiveRevealChange(Boolean(revealedMnemonic))',
+    );
+    expect(dashboardSource).toContain(
+      '() => () => onSensitiveRevealChange(false)',
+    );
+    expect(accessSource).toContain('lockWhenDisabled: isSensitiveSession');
   });
 
   it('keeps email and imported wallet authority in encrypted Worker vaults', () => {
     expect(workerSource).toContain('createPasswordSecretVault(');
     expect(workerSource).toContain('createRandomSecretVault(');
-    expect(workerSource).not.toMatch(/source: 'email-credentials';\s+mnemonic:/u);
-    expect(workerSource).not.toMatch(/source: 'single-private-key';\s+privateKey:/u);
+    expect(workerSource).not.toMatch(
+      /source: 'email-credentials';\s+mnemonic:/u,
+    );
+    expect(workerSource).not.toMatch(
+      /source: 'single-private-key';\s+privateKey:/u,
+    );
   });
 });

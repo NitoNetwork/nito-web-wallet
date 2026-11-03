@@ -36,6 +36,7 @@ import {
 } from '@/src/domain/wallet-policy';
 import { useI18n } from '@/src/i18n';
 import { translateWalletError } from '@/src/i18nError';
+import { watchBackgroundSession } from '@/src/security/backgroundSessionLock';
 import { createSeedBackupWordIndexes } from '@/src/services/seedBackup';
 import {
   clearAndDisableBrowserCredentialFields,
@@ -160,6 +161,7 @@ export function WalletAccessWorkspace() {
   const [activeWallet, setActiveWallet] = useState<WalletSessionSummary>();
   const [sessionActive, setSessionActive] = useState(false);
   const [pendingCreation, setPendingCreation] = useState<PendingCreation>();
+  const [sensitiveRevealActive, setSensitiveRevealActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -261,6 +263,7 @@ export function WalletAccessWorkspace() {
       setSessionActive(false);
       setActiveWallet(undefined);
       setPendingCreation(undefined);
+      setSensitiveRevealActive(false);
       setNotice(message ?? t('notice.sessionDestroyed'));
       // Terminate synchronously instead of waiting for a round trip: leaving the
       // wallet must destroy the Worker even if WASM or the event loop is stuck.
@@ -323,75 +326,32 @@ export function WalletAccessWorkspace() {
     };
   }, [activeWallet, autoLockMinutes, destroySession, t]);
 
+  const hasSession = Boolean(activeWallet || pendingCreation);
+  const isSensitiveSession = Boolean(pendingCreation) || sensitiveRevealActive;
   useEffect(() => {
-    if (!activeWallet && !pendingCreation) return;
-    let backgroundTimer: ReturnType<typeof setTimeout> | undefined;
-    let hiddenAt: number | undefined;
-    const clearBackgroundTimer = () => {
-      if (backgroundTimer !== undefined) clearTimeout(backgroundTimer);
-      backgroundTimer = undefined;
-    };
-    const destroySensitivePage = () => {
-      clearBackgroundTimer();
-      hiddenAt = undefined;
-      destroySession(
-        backgroundLockSeconds === 0
-          ? t('notice.sessionBackgroundImmediate')
-          : t('notice.sessionBackground', {
-              seconds: backgroundLockSeconds,
-            }),
-      );
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        if (pendingCreation) {
-          destroySensitivePage();
-          return;
-        }
-        if (backgroundLockSeconds === 0) {
-          hiddenAt = undefined;
-          clearBackgroundTimer();
-          return;
-        }
-        hiddenAt = Date.now();
-        clearBackgroundTimer();
-        backgroundTimer = setTimeout(
-          destroySensitivePage,
-          backgroundLockSeconds * 1_000,
-        );
-        return;
-      }
-      if (
-        hiddenAt !== undefined &&
-        Date.now() - hiddenAt >= backgroundLockSeconds * 1_000
-      ) {
-        destroySensitivePage();
-        return;
-      }
-      hiddenAt = undefined;
-      clearBackgroundTimer();
-    };
-    const blurPendingBackup = () => {
-      if (pendingCreation) destroySensitivePage();
-    };
-    const restoreFromPageCache = (event: PageTransitionEvent) => {
-      if (event.persisted) destroySensitivePage();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', destroySensitivePage);
-    window.addEventListener('pageshow', restoreFromPageCache);
-    // A generated phrase is stricter than an unlocked wallet: leaving its
-    // browser window destroys the creation flow even if visibility stays visible.
-    if (pendingCreation) window.addEventListener('blur', blurPendingBackup);
-    return () => {
-      clearBackgroundTimer();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pagehide', destroySensitivePage);
-      window.removeEventListener('pageshow', restoreFromPageCache);
-      window.removeEventListener('blur', blurPendingBackup);
-    };
-  }, [activeWallet, backgroundLockSeconds, destroySession, pendingCreation, t]);
+    if (!hasSession) return;
+    return watchBackgroundSession({
+      page: document,
+      windowEvents: window,
+      delaySeconds: backgroundLockSeconds,
+      trackWindowFocus: isSensitiveSession,
+      lockWhenDisabled: isSensitiveSession,
+      onLock: () =>
+        destroySession(
+          backgroundLockSeconds === 0
+            ? t('notice.sessionBackgroundImmediate')
+            : t('notice.sessionBackground', {
+                seconds: backgroundLockSeconds,
+              }),
+        ),
+    });
+  }, [
+    hasSession,
+    isSensitiveSession,
+    backgroundLockSeconds,
+    destroySession,
+    t,
+  ]);
 
   const activate = (summary: WalletSessionSummary) => {
     sessionRef.current = summary;
@@ -580,6 +540,7 @@ export function WalletAccessWorkspace() {
             revealMnemonic={revealMnemonic}
             onAutoLockMinutesChange={setAutoLockMinutes}
             onBackgroundLockSecondsChange={setBackgroundLockSeconds}
+            onSensitiveRevealChange={setSensitiveRevealActive}
             onLock={destroySession}
           />
         </Suspense>

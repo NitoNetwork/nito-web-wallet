@@ -31,7 +31,7 @@ describe('wallet session lock policy', () => {
     expect(isAutoLockMinutes(1.5)).toBe(false);
   });
 
-  it('offers disabled tab locking or delays from 10 through 60 seconds', () => {
+  it('offers tab locks from immediate through 60 seconds', () => {
     expect(BACKGROUND_LOCK_SECOND_OPTIONS).toEqual([0, 10, 20, 30, 40, 50, 60]);
     expect(DEFAULT_BACKGROUND_LOCK_SECONDS).toBe(30);
     expect(isBackgroundLockSeconds(0)).toBe(true);
@@ -40,20 +40,20 @@ describe('wallet session lock policy', () => {
     expect(isBackgroundLockSeconds(61)).toBe(false);
   });
 
-  it('disables both wallet timers at zero while keeping seed creation stricter', () => {
+  it('uses the selected background delay for both wallet and seed creation', () => {
+    expect(accessSource).toContain('Boolean(activeWallet || pendingCreation)');
+    expect(accessSource).toContain(
+      'Boolean(pendingCreation) || sensitiveRevealActive',
+    );
+    expect(accessSource).toContain('return watchBackgroundSession({');
+    expect(accessSource).toContain('delaySeconds: backgroundLockSeconds');
+    expect(accessSource).toContain('trackWindowFocus: isSensitiveSession');
+    expect(accessSource).toContain('lockWhenDisabled: isSensitiveSession');
+    expect(accessSource).toContain(
+      'onSensitiveRevealChange={setSensitiveRevealActive}',
+    );
     expect(accessSource).toContain(
       'if (!activeWallet || autoLockMinutes === 0) return;',
-    );
-    expect(accessSource).toContain('if (pendingCreation) {');
-    expect(accessSource).toMatch(
-      /if \(backgroundLockSeconds === 0\) \{\r?\n\s+hiddenAt = undefined;\r?\n\s+clearBackgroundTimer\(\);\r?\n\s+return;/u,
-    );
-    expect(accessSource).toContain('backgroundLockSeconds * 1_000');
-    expect(accessSource).toContain(
-      "if (pendingCreation) window.addEventListener('blur', blurPendingBackup)",
-    );
-    expect(accessSource).toContain(
-      "window.addEventListener('pagehide', destroySensitivePage)",
     );
   });
 
