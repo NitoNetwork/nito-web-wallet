@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 — 2026-11-07
+
+- Localize browser constraint messages in every wallet form according to the selected interface language.
+- Prevent previously displayed transient messages from remaining in the former language after a language change.
+- Complete the RBF terminology and accessibility translation audit across all nine interface languages.
+
 ## 1.2.1 — 2026-11-07
 
 - Use the same concise, two-line BIP39 passphrase explanation when creating and restoring a wallet in all nine interface languages.

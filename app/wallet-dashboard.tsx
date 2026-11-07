@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
+import { LocalizedForm } from '@/components/localized-form';
 import { RecoveryPhraseCopy } from '@/components/recovery-phrase-copy';
 import { WalletBalance } from '@/components/wallet-balance';
 import { WalletUtxoList } from '@/components/wallet-utxo-list';
@@ -49,7 +50,12 @@ import {
   type HdAddressSequence,
   type HdBranch,
 } from '@/src/domain/wallet-policy';
-import { useI18n, type TranslationKey, type Translator } from '@/src/i18n';
+import {
+  useI18n,
+  useResetOnLanguageChange,
+  type TranslationKey,
+  type Translator,
+} from '@/src/i18n';
 import { translateNetworkError, translateWalletError } from '@/src/i18nError';
 import { nitoTransactionExplorerUrl } from '@/src/network/explorer';
 import {
@@ -280,6 +286,14 @@ export function WalletDashboard({
   const [rbfQuote, setRbfQuote] = useState<TransparentRbfCancellationQuote>();
   const [rbfBusy, setRbfBusy] = useState(false);
   const [rbfError, setRbfError] = useState<string>();
+  const clearTranslatedStatus = useCallback(() => {
+    setBackupError(undefined);
+    setLocalError(undefined);
+    setNotice(undefined);
+    setRbfError(undefined);
+    setSendError(undefined);
+  }, []);
+  useResetOnLanguageChange(clearTranslatedStatus);
   const closeBroadcastDialog = useCallback(() => {
     setBroadcastReceipt(undefined);
     setRbfQuote(undefined);
@@ -1636,7 +1650,7 @@ export function WalletDashboard({
                 </Button>
               </div>
             ) : !revealedMnemonic && summary.source === 'email-credentials' ? (
-              <form
+              <LocalizedForm
                 className="rounded-2xl border border-amber-300/15 bg-slate-950/55 p-4"
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -1709,7 +1723,7 @@ export function WalletDashboard({
                     {t('backup.verifyShow')}
                   </Button>
                 </div>
-              </form>
+              </LocalizedForm>
             ) : !revealedMnemonic ? (
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-slate-500">
@@ -2245,7 +2259,7 @@ export function WalletDashboard({
             </div>
           </CardHeader>
           <CardContent className="px-5 pb-5">
-            <form
+            <LocalizedForm
               className="space-y-3"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -2449,7 +2463,7 @@ export function WalletDashboard({
                 )}
                 {t('send.preview')}
               </Button>
-            </form>
+            </LocalizedForm>
 
             {sendError ? (
               <div
@@ -2582,7 +2596,7 @@ export function WalletDashboard({
                 <p className="text-xs leading-5 text-slate-500">
                   {t('settings.addressSearchBody')}
                 </p>
-                <form
+                <LocalizedForm
                   className="mt-4 grid gap-3 sm:grid-cols-2"
                   onSubmit={recoverRange}
                 >
@@ -2669,7 +2683,7 @@ export function WalletDashboard({
                     )}
                     {t('settings.inspectSession')}
                   </Button>
-                </form>
+                </LocalizedForm>
               </CardContent>
             </details>
           </Card>
@@ -3034,7 +3048,7 @@ function WalletScanGate({
     <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center py-10">
       <div className="w-full max-w-md text-center">
         <Image
-          alt="Logo NITO"
+          alt="NITO"
           className={`mx-auto size-20 ${failed ? '' : 'motion-safe:animate-spin [animation-duration:2.8s]'}`}
           height={80}
           preload

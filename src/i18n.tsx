@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -102,4 +103,15 @@ export function useI18n(): I18nContextValue {
   const value = useContext(I18nContext);
   if (!value) throw new Error('useI18n must be used inside LanguageProvider.');
   return value;
+}
+
+export function useResetOnLanguageChange(reset: () => void): void {
+  const { language } = useI18n();
+  const previousLanguage = useRef(language);
+
+  useEffect(() => {
+    if (previousLanguage.current === language) return;
+    previousLanguage.current = language;
+    reset();
+  }, [language, reset]);
 }

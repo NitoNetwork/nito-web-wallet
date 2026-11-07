@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
@@ -15,6 +15,20 @@ const placeholders = (message: string) =>
   [...message.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/gu)]
     .map((match) => match[1])
     .sort();
+
+const walletTsxFiles = () => {
+  const visit = (directory: string): string[] =>
+    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) return visit(path);
+      return entry.isFile() && entry.name.endsWith('.tsx') ? [path] : [];
+    });
+
+  return ['app', 'components']
+    .flatMap((directory) => visit(resolve(process.cwd(), directory)))
+    .map((path) => relative(process.cwd(), path).replaceAll('\\', '/'))
+    .sort();
+};
 
 describe('wallet languages', () => {
   it('offers the nine supported interface languages', () => {
@@ -96,16 +110,8 @@ describe('wallet languages', () => {
   });
 
   it('keeps visible JSX and accessibility labels behind the translation layer', () => {
-    const files = [
-      'app/page.tsx',
-      'app/wallet-access-workspace.tsx',
-      'app/wallet-dashboard.tsx',
-      'app/crypto-core-status.tsx',
-      'components/recovery-phrase-copy.tsx',
-      'components/wallet-language-select.tsx',
-      'components/wallet-utxo-list.tsx',
-    ];
-    const allowedBrandText = new Set(['NITO', 'Web Wallet']);
+    const files = walletTsxFiles();
+    const allowedBrandText = new Set(['NITO', 'Nito', 'Web Wallet']);
 
     for (const file of files) {
       const source = readFileSync(resolve(process.cwd(), file), 'utf8');
@@ -125,13 +131,15 @@ describe('wallet languages', () => {
         }
         if (
           ts.isJsxAttribute(node) &&
-          ['aria-label', 'placeholder', 'title'].includes(
+          ['alt', 'aria-label', 'placeholder', 'title'].includes(
             node.name.getText(sourceFile),
           ) &&
           node.initializer &&
           ts.isStringLiteral(node.initializer)
         ) {
-          rawAccessibilityLabels.push(node.initializer.text);
+          const text = node.initializer.text.trim();
+          if (text && !allowedBrandText.has(text))
+            rawAccessibilityLabels.push(text);
         }
         ts.forEachChild(node, visit);
       };
@@ -142,6 +150,48 @@ describe('wallet languages', () => {
       expect(source, file).not.toMatch(/(?:caught|error)\.message/u);
       expect(source, file).not.toContain('errorMessage');
     }
+  });
+
+  it('routes every form through wallet-language constraint validation', () => {
+    const rawForms: string[] = [];
+    for (const file of walletTsxFiles()) {
+      if (file === 'components/localized-form.tsx') continue;
+      const source = readFileSync(resolve(process.cwd(), file), 'utf8');
+      const sourceFile = ts.createSourceFile(
+        file,
+        source,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX,
+      );
+      const visit = (node: ts.Node) => {
+        if (
+          (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+          node.tagName.getText(sourceFile) === 'form'
+        ) {
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
+          rawForms.push(`${file}:${line + 1}`);
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      expect(source, file).not.toContain('.validationMessage');
+      expect(source, file).not.toContain('.reportValidity(');
+    }
+
+    expect(rawForms).toEqual([]);
+    const localizedForm = readFileSync(
+      resolve(process.cwd(), 'components/localized-form.tsx'),
+      'utf8',
+    );
+    expect(localizedForm).toContain(
+      'onInvalidCapture={localizeInvalidMessage}',
+    );
+    expect(localizedForm).toContain('onInputCapture={clearLocalizedMessage}');
+    expect(localizedForm).toContain('form.querySelectorAll(');
+    expect(localizedForm).toContain("'input, select, textarea'");
   });
 
   it('exposes the translated official repository as a secure external link', () => {
@@ -242,16 +292,7 @@ describe('wallet languages', () => {
   });
 
   it('does not keep orphaned translations outside the locale files', () => {
-    const sourceFiles = [
-      'app/page.tsx',
-      'app/wallet-access-workspace.tsx',
-      'app/wallet-dashboard.tsx',
-      'app/crypto-core-status.tsx',
-      'components/recovery-phrase-copy.tsx',
-      'components/wallet-language-select.tsx',
-      'src/i18nError.ts',
-      'components/wallet-utxo-list.tsx',
-    ];
+    const sourceFiles = [...walletTsxFiles(), 'src/i18nError.ts'];
     const source = sourceFiles
       .map((file) => readFileSync(resolve(process.cwd(), file), 'utf8'))
       .join('\n');

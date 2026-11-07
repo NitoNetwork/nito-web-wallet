@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
+import { LocalizedForm } from '@/components/localized-form';
 import { RecoveryPhraseCopy } from '@/components/recovery-phrase-copy';
 import {
   bip39PassphrasesMatch,
@@ -38,7 +39,7 @@ import {
   WALLET_SOURCE_POLICIES,
   type WalletSourceKind,
 } from '@/src/domain/wallet-policy';
-import { useI18n } from '@/src/i18n';
+import { useI18n, useResetOnLanguageChange } from '@/src/i18n';
 import { translateWalletError } from '@/src/i18nError';
 import { watchBackgroundSession } from '@/src/security/backgroundSessionLock';
 import { createSeedBackupWordIndexes } from '@/src/services/seedBackup';
@@ -188,6 +189,11 @@ export function WalletAccessWorkspace() {
   const creationFormRef = useRef<HTMLFormElement>(null);
   const importMnemonicFormRef = useRef<HTMLFormElement>(null);
   const emailCredentialFormRef = useRef<HTMLFormElement>(null);
+  const clearTranslatedStatus = useCallback(() => {
+    setError(undefined);
+    setNotice(undefined);
+  }, []);
+  useResetOnLanguageChange(clearTranslatedStatus);
 
   const setAutoLockMinutes = useCallback((minutes: AutoLockMinutes) => {
     setLockPreferences((preferences) => ({
@@ -677,7 +683,7 @@ export function WalletAccessWorkspace() {
                   description={t('backup.creationNoTimeout')}
                   mnemonic={pendingCreation.mnemonic}
                 />
-                <form
+                <LocalizedForm
                   className="mt-5"
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -705,7 +711,7 @@ export function WalletAccessWorkspace() {
                     {t('backup.continueVerification')}
                     <ArrowRight data-icon="inline-end" />
                   </Button>
-                </form>
+                </LocalizedForm>
               </>
             ) : (
               <p className="text-sm leading-6 text-slate-400">
@@ -713,7 +719,7 @@ export function WalletAccessWorkspace() {
               </p>
             )}
             {!showingBackup ? (
-              <form className="mt-5" onSubmit={verifyMnemonicBackup}>
+              <LocalizedForm className="mt-5" onSubmit={verifyMnemonicBackup}>
                 <div className="grid gap-3 rounded-xl border border-amber-300/20 bg-slate-950/45 p-4 sm:grid-cols-3">
                   {pendingCreation.wordIndexes.map((wordIndex, index) => (
                     <label
@@ -745,7 +751,7 @@ export function WalletAccessWorkspace() {
                   {busy ? <LoaderCircle className="animate-spin" /> : null}
                   {t('backup.verifyComplete')}
                 </Button>
-              </form>
+              </LocalizedForm>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-2">
               <Button
@@ -868,7 +874,7 @@ export function WalletAccessWorkspace() {
                     <h2 className="mb-5 text-lg font-black tracking-tight text-white">
                       {t('access.newPhrase')}
                     </h2>
-                    <form
+                    <LocalizedForm
                       ref={creationFormRef}
                       className="space-y-4"
                       onSubmit={createMnemonic}
@@ -997,14 +1003,14 @@ export function WalletAccessWorkspace() {
                         )}{' '}
                         {t('access.generate')}
                       </Button>
-                    </form>
+                    </LocalizedForm>
                   </div>
                 ) : (
                   <div>
                     <h2 className="mb-5 text-lg font-black tracking-tight text-white">
                       {t('access.restore')}
                     </h2>
-                    <form
+                    <LocalizedForm
                       ref={importMnemonicFormRef}
                       className="space-y-4"
                       onSubmit={importMnemonic}
@@ -1068,7 +1074,7 @@ export function WalletAccessWorkspace() {
                         ) : null}
                         {t('access.openSync')}
                       </Button>
-                    </form>
+                    </LocalizedForm>
                   </div>
                 )}
               </div>
@@ -1079,7 +1085,7 @@ export function WalletAccessWorkspace() {
                 <h2 className="mb-5 text-lg font-black tracking-tight text-white">
                   {t('access.privateTitle')}
                 </h2>
-                <form
+                <LocalizedForm
                   className="space-y-4"
                   onSubmit={importPrivateKey}
                   autoComplete="off"
@@ -1110,7 +1116,7 @@ export function WalletAccessWorkspace() {
                     ) : null}
                     {t('access.openSync')}
                   </Button>
-                </form>
+                </LocalizedForm>
               </div>
             ) : null}
 
@@ -1130,7 +1136,7 @@ export function WalletAccessWorkspace() {
                     </span>
                   </InfoTip>
                 </div>
-                <form
+                <LocalizedForm
                   ref={emailCredentialFormRef}
                   className="grid gap-4 sm:grid-cols-2"
                   onSubmit={importEmailCredentials}
@@ -1189,7 +1195,7 @@ export function WalletAccessWorkspace() {
                     ) : null}
                     {t('access.openSync')}
                   </Button>
-                </form>
+                </LocalizedForm>
               </div>
             ) : null}
           </div>

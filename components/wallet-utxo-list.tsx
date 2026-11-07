@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
+import { LocalizedForm } from '@/components/localized-form';
 import { useI18n } from '@/src/i18n';
 import { HD_ACCOUNT_TEMPLATES } from '@/src/domain/wallet-policy';
 import type { ElectrumUtxo } from '@/src/network/electrum';
@@ -168,7 +169,7 @@ export function WalletUtxoList({
             >
               <ChevronLeft />
             </Button>
-            <form
+            <LocalizedForm
               className="flex flex-wrap items-center justify-center gap-2 text-sm"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -195,7 +196,7 @@ export function WalletUtxoList({
               <Button type="submit" size="sm" variant="outline">
                 {t('utxos.go')}
               </Button>
-            </form>
+            </LocalizedForm>
             <Button
               type="button"
               variant="outline"

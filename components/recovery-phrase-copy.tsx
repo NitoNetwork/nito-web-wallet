@@ -1,10 +1,10 @@
 'use client';
 
 import { Copy } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { useI18n } from '@/src/i18n';
+import { useI18n, useResetOnLanguageChange } from '@/src/i18n';
 import { translateWalletError } from '@/src/i18nError';
 
 type RecoveryPhraseCopyProps = {
@@ -22,6 +22,8 @@ export function RecoveryPhraseCopy({
   const [armed, setArmed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string>();
+  const clearTranslatedStatus = useCallback(() => setError(undefined), []);
+  useResetOnLanguageChange(clearTranslatedStatus);
 
   async function copyPhrase() {
     try {
