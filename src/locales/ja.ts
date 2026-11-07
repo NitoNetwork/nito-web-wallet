@@ -55,7 +55,7 @@ export const ja = {
   "access.phrase": "BIP39フレーズ",
   "access.phrasePlaceholder": "12語または24語を入力",
   "access.bip39PassphraseTitle": "任意のBIP39パスフレーズ",
-  "access.bip39PassphraseCreateWarning": "これは追加のシード単語ではありません。どのパスフレーズでも有効なウォレットが開くため、入力ミスは検出できません。正確に、復元フレーズとは別に保管してください。これを失うと資金を復元できません。",
+  "access.bip39PassphraseCreateWarning": "このパスフレーズは復元フレーズと組み合わせて使う追加の秘密情報です。\n正確に入力してください。値が異なると、別のウォレットが開きます。",
   "access.bip39PassphraseImportWarning": "このパスフレーズは復元フレーズと組み合わせて使う追加の秘密情報です。\n正確に入力してください。値が異なると、別のウォレットが開きます。",
   "access.bip39PassphraseLabel": "BIP39パスフレーズ",
   "access.bip39PassphraseConfirmLabel": "BIP39パスフレーズの確認",

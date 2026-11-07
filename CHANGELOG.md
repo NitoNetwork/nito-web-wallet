@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-11-07
+
+- Use the same concise, two-line BIP39 passphrase explanation when creating and restoring a wallet in all nine interface languages.
+
 ## 1.2.0 — 2026-11-07
 
 - Add an optional BIP39 passphrase when creating or restoring an HD wallet.

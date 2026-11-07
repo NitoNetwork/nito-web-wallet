@@ -174,7 +174,7 @@ describe('wallet languages', () => {
       'Optional BIP39 passphrase',
     );
     expect(MESSAGES.en['access.bip39PassphraseCreateWarning']).toBe(
-      'This is not an extra seed word. Every passphrase opens a valid wallet, so a typo cannot be detected. Back it up exactly and separately. Without it, funds cannot be recovered.',
+      'This passphrase is an additional secret associated with your recovery phrase.\nEnter it exactly: a different value opens a different wallet.',
     );
     expect(MESSAGES.en['access.bip39PassphraseImportWarning']).toBe(
       'This passphrase is an additional secret associated with your recovery phrase.\nEnter it exactly: a different value opens a different wallet.',
@@ -182,6 +182,11 @@ describe('wallet languages', () => {
     expect(MESSAGES.fr['access.bip39PassphraseImportWarning']).toBe(
       'Cette passphrase est un secret supplémentaire associé à votre phrase de récupération.\nSaisissez-la exactement : une valeur différente ouvre un wallet différent.',
     );
+    for (const { code } of WALLET_LANGUAGES) {
+      expect(MESSAGES[code]['access.bip39PassphraseCreateWarning']).toBe(
+        MESSAGES[code]['access.bip39PassphraseImportWarning'],
+      );
+    }
     const keys = [
       'access.bip39PassphraseTitle',
       'access.bip39PassphraseCreateWarning',

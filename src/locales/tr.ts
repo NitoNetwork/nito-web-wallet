@@ -55,7 +55,7 @@ export const tr = {
   "access.phrase": "BIP39 ifadesi",
   "access.phrasePlaceholder": "12 veya 24 kelimenizi girin",
   "access.bip39PassphraseTitle": "İsteğe bağlı BIP39 parolası",
-  "access.bip39PassphraseCreateWarning": "Bu, ek bir seed kelimesi değildir. Her parola geçerli bir cüzdan açtığı için yazım hatası algılanamaz. Parolayı tam olarak ve ayrı bir yerde yedekleyin. Parola olmadan fonlar kurtarılamaz.",
+  "access.bip39PassphraseCreateWarning": "Bu parola, kurtarma ifadenizle ilişkilendirilen ek bir sırdır.\nTam olarak girin: farklı bir değer, farklı bir cüzdan açar.",
   "access.bip39PassphraseImportWarning": "Bu parola, kurtarma ifadenizle ilişkilendirilen ek bir sırdır.\nTam olarak girin: farklı bir değer, farklı bir cüzdan açar.",
   "access.bip39PassphraseLabel": "BIP39 parolası",
   "access.bip39PassphraseConfirmLabel": "BIP39 parolasını doğrulayın",

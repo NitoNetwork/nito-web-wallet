@@ -55,7 +55,7 @@ export const de = {
   "access.phrase": "BIP39-Phrase",
   "access.phrasePlaceholder": "12 oder 24 Wörter eingeben",
   "access.bip39PassphraseTitle": "Optionale BIP39-Passphrase",
-  "access.bip39PassphraseCreateWarning": "Dies ist kein zusätzliches Seed-Wort. Jede Passphrase öffnet eine gültige Wallet, daher kann ein Tippfehler nicht erkannt werden. Sichern Sie sie exakt und getrennt. Ohne sie können die Guthaben nicht wiederhergestellt werden.",
+  "access.bip39PassphraseCreateWarning": "Diese Passphrase ist ein zusätzliches Geheimnis, das mit Ihrer Wiederherstellungsphrase verknüpft ist.\nGeben Sie sie exakt ein: Ein anderer Wert öffnet eine andere Wallet.",
   "access.bip39PassphraseImportWarning": "Diese Passphrase ist ein zusätzliches Geheimnis, das mit Ihrer Wiederherstellungsphrase verknüpft ist.\nGeben Sie sie exakt ein: Ein anderer Wert öffnet eine andere Wallet.",
   "access.bip39PassphraseLabel": "BIP39-Passphrase",
   "access.bip39PassphraseConfirmLabel": "BIP39-Passphrase bestätigen",

@@ -55,7 +55,7 @@ export const zh = {
   "access.phrase": "BIP39 助记词",
   "access.phrasePlaceholder": "输入您的 12 或 24 个词",
   "access.bip39PassphraseTitle": "可选 BIP39 密码短语",
-  "access.bip39PassphraseCreateWarning": "这不是额外的助记词。任何密码短语都会打开一个有效钱包，因此无法检测输入错误。请准确地单独备份。没有它，资金将无法恢复。",
+  "access.bip39PassphraseCreateWarning": "此密码短语是与恢复短语关联的额外秘密信息。\n请准确输入：不同的值会打开不同的钱包。",
   "access.bip39PassphraseImportWarning": "此密码短语是与恢复短语关联的额外秘密信息。\n请准确输入：不同的值会打开不同的钱包。",
   "access.bip39PassphraseLabel": "BIP39 密码短语",
   "access.bip39PassphraseConfirmLabel": "确认 BIP39 密码短语",

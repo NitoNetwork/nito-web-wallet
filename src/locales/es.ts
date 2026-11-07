@@ -55,7 +55,7 @@ export const es = {
   "access.phrase": "Frase BIP39",
   "access.phrasePlaceholder": "Introduzca sus 12 o 24 palabras",
   "access.bip39PassphraseTitle": "Frase de contraseña BIP39 opcional",
-  "access.bip39PassphraseCreateWarning": "No es una palabra adicional de la semilla. Cada frase de contraseña abre una cartera válida, por lo que no se puede detectar un error tipográfico. Guárdela exactamente y por separado. Sin ella, no se pueden recuperar los fondos.",
+  "access.bip39PassphraseCreateWarning": "Esta frase de contraseña es un secreto adicional asociado a su frase de recuperación.\nIntrodúzcala exactamente: un valor diferente abre otra cartera.",
   "access.bip39PassphraseImportWarning": "Esta frase de contraseña es un secreto adicional asociado a su frase de recuperación.\nIntrodúzcala exactamente: un valor diferente abre otra cartera.",
   "access.bip39PassphraseLabel": "Frase de contraseña BIP39",
   "access.bip39PassphraseConfirmLabel": "Confirmar la frase de contraseña BIP39",
