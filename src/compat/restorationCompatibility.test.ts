@@ -3,7 +3,10 @@ import { resolve } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { instantiateNitoWasmCrypto, type NitoWasmCrypto } from '../crypto/wasmAbi';
+import {
+  instantiateNitoWasmCrypto,
+  type NitoWasmCrypto,
+} from '../crypto/wasmAbi';
 import { deriveEmailCredentialMnemonic } from './email-credentials';
 
 const BIP39_RESTORATION_VECTOR =
@@ -23,13 +26,20 @@ describe('BIP39 restoration compatibility', () => {
     const bytes = await readFile(
       resolve(process.cwd(), 'public', 'wasm', 'nito_wallet_crypto_web.wasm'),
     );
-    wasm = await instantiateNitoWasmCrypto(bytes, (target) => target.fill(0x39));
+    wasm = await instantiateNitoWasmCrypto(bytes, (target) =>
+      target.fill(0x39),
+    );
   });
 
-  const derive = (mnemonic: string, requests: readonly AddressRequest[]) =>
+  const derive = (
+    mnemonic: string,
+    requests: readonly AddressRequest[],
+    bip39Passphrase?: string,
+  ) =>
     wasm.invoke<Array<{ path: string; address: string }>>('deriveAddresses', {
       mnemonic,
       requests,
+      ...(bip39Passphrase === undefined ? {} : { bip39Passphrase }),
     });
 
   it('restores the 12-word vector across external, internal and deep paths', () => {
@@ -49,7 +59,9 @@ describe('BIP39 restoration compatibility', () => {
       { path: "m/84'/0'/1'/0/9999", scriptType: 'p2wpkh' },
     ];
 
-    expect(derive(BIP39_RESTORATION_VECTOR, requests).map(({ address }) => address)).toEqual([
+    expect(
+      derive(BIP39_RESTORATION_VECTOR, requests).map(({ address }) => address),
+    ).toEqual([
       '1J3J6EvPrv8q6AC3VCjWV45Uf3nssNMRtH',
       '34K56kSjgUCUSD8GTtuF7c9Zzwokbs6uZ7',
       'nito1q8c6fshw2dlwun7ekn9qwf37cu2rn755uyz5tjf',
@@ -79,7 +91,10 @@ describe('BIP39 restoration compatibility', () => {
       { path: "m/86'/0'/0'/0/0", scriptType: 'p2tr' },
     ];
     const emailAddresses = derive(derivedMnemonic, requests);
-    const restoredFromSeedAddresses = derive(EMAIL_RESTORATION_VECTOR, requests);
+    const restoredFromSeedAddresses = derive(
+      EMAIL_RESTORATION_VECTOR,
+      requests,
+    );
 
     expect(emailAddresses.map(({ address }) => address)).toEqual([
       '1LxDd9JxFmkWq5YDdpAfbE5RsXJkRtwAd2',
@@ -88,5 +103,22 @@ describe('BIP39 restoration compatibility', () => {
       'nito1ptmrefqhfhsxyl7xup05fphztqwld0trvsa7z0q7a7dcztxye7cdq9u2x3n',
     ]);
     expect(restoredFromSeedAddresses).toEqual(emailAddresses);
+  });
+
+  it('restores the same passphrase wallet across accounts and both branches', () => {
+    const requests: AddressRequest[] = [
+      { path: "m/44'/0'/0'/0/0", scriptType: 'p2pkh' },
+      { path: "m/49'/0'/0'/1/1", scriptType: 'p2sh-p2wpkh' },
+      { path: "m/84'/0'/1'/0/2", scriptType: 'p2wpkh' },
+      { path: "m/86'/0'/1'/1/3", scriptType: 'p2tr' },
+    ];
+    const first = derive(BIP39_RESTORATION_VECTOR, requests, 'TREZOR');
+    const restored = derive(BIP39_RESTORATION_VECTOR, requests, 'TREZOR');
+    const standard = derive(BIP39_RESTORATION_VECTOR, requests);
+
+    expect(restored).toEqual(first);
+    expect(restored.map(({ address }) => address)).not.toEqual(
+      standard.map(({ address }) => address),
+    );
   });
 });

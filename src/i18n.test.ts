@@ -169,6 +169,39 @@ describe('wallet languages', () => {
     }
   });
 
+  it('keeps the required English BIP39 passphrase warnings exact and translates every new key', () => {
+    expect(MESSAGES.en['access.bip39PassphraseTitle']).toBe(
+      'Optional BIP39 passphrase',
+    );
+    expect(MESSAGES.en['access.bip39PassphraseCreateWarning']).toBe(
+      'This is not an extra seed word. Every passphrase opens a valid wallet, so a typo cannot be detected. Back it up exactly and separately. Without it, funds cannot be recovered.',
+    );
+    expect(MESSAGES.en['access.bip39PassphraseImportWarning']).toBe(
+      'Enter the exact passphrase used with this recovery phrase. A different value opens a different valid wallet without an error.',
+    );
+    const keys = [
+      'access.bip39PassphraseTitle',
+      'access.bip39PassphraseCreateWarning',
+      'access.bip39PassphraseImportWarning',
+      'access.bip39PassphraseLabel',
+      'access.bip39PassphraseConfirmLabel',
+      'access.bip39PassphrasePlaceholder',
+      'access.bip39PassphraseConfirmPlaceholder',
+      'backup.bip39PassphraseSaved',
+      'errors.bip39PassphraseMismatch',
+    ] as const;
+    for (const key of keys) {
+      for (const { code } of WALLET_LANGUAGES) {
+        expect(MESSAGES[code][key].trim(), `${code}:${key}`).not.toBe('');
+        if (code !== 'en') {
+          expect(MESSAGES[code][key], `${code}:${key}`).not.toBe(
+            MESSAGES.en[key],
+          );
+        }
+      }
+    }
+  });
+
   it('keeps translated source tabs inside narrow mobile grid columns', () => {
     const source = readFileSync(
       resolve(process.cwd(), 'app/wallet-access-workspace.tsx'),

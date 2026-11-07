@@ -74,8 +74,12 @@ export class CryptoWorkerClient {
     const id = crypto.randomUUID();
     return new Promise<CryptoWorkerResultByCommand[T]>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new NitoCryptoError('CRYPTO_WORKER_TIMEOUT', 'Cryptographic operation timed out.'));
+        const timeoutError = new NitoCryptoError(
+          'CRYPTO_WORKER_TIMEOUT',
+          'Cryptographic operation timed out.',
+        );
+        this.rejectAll(timeoutError);
+        this.destroyWorker();
       }, this.timeoutMs);
       this.pending.set(id, {
         resolve: (value) => resolve(value as CryptoWorkerResultByCommand[T]),

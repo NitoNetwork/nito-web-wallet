@@ -28,6 +28,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoTip } from '@/components/info-tip';
 import { RecoveryPhraseCopy } from '@/components/recovery-phrase-copy';
+import {
+  bip39PassphrasesMatch,
+  normalizeBip39Passphrase,
+} from '@/src/crypto/bip39Passphrase';
 import { CryptoWorkerClient } from '@/src/crypto/cryptoWorkerClient';
 import type { WalletSessionSummary } from '@/src/crypto/workerProtocol';
 import {
@@ -67,6 +71,8 @@ const WalletDashboard = lazy(() =>
 
 const EMAIL_FIELD = 'username';
 const PASSWORD_FIELD = 'password';
+const BIP39_PASSPHRASE_FIELD = 'bip39Passphrase';
+const BIP39_PASSPHRASE_CONFIRMATION_FIELD = 'bip39PassphraseConfirmation';
 const INPUT_CLASS =
   'mt-2 min-h-12 w-full rounded-2xl border border-sky-200/[0.12] bg-[#050d1a] px-4 py-3 text-sm text-slate-100 outline-none transition-all duration-200 placeholder:text-slate-600 hover:border-sky-200/20 hover:bg-[#07111f] focus:border-sky-300/55 focus:ring-4 focus:ring-sky-300/10';
 const SOURCE_ICONS: Record<WalletSourceKind, typeof Fingerprint> = {
@@ -85,11 +91,13 @@ type PendingCreation =
       summary: WalletSessionSummary;
       mnemonic: string;
       wordIndexes: readonly number[];
+      usesBip39Passphrase: boolean;
       stage: 'backup';
     }
   | {
       summary: WalletSessionSummary;
       wordIndexes: readonly number[];
+      usesBip39Passphrase: boolean;
       stage: 'verify';
     };
 
@@ -147,6 +155,13 @@ export function WalletAccessWorkspace() {
   const [source, setSource] = useState<WalletSourceKind>('email-credentials');
   const [bip39Mode, setBip39Mode] = useState<'create' | 'import'>('import');
   const [mnemonicVisible, setMnemonicVisible] = useState(false);
+  const [creationPassphraseVisible, setCreationPassphraseVisible] =
+    useState(false);
+  const [
+    creationPassphraseConfirmationVisible,
+    setCreationPassphraseConfirmationVisible,
+  ] = useState(false);
+  const [importPassphraseVisible, setImportPassphraseVisible] = useState(false);
   const [privateKeyVisible, setPrivateKeyVisible] = useState(false);
   const [emailPasswordVisible, setEmailPasswordVisible] = useState(false);
   const [emailCredentialsEnabled, setEmailCredentialsEnabled] = useState(false);
@@ -170,6 +185,8 @@ export function WalletAccessWorkspace() {
   const [diceSession] = useState(() => new PhysicalDiceEntropySession());
   const clientRef = useRef(new CryptoWorkerClient());
   const sessionRef = useRef<WalletSessionSummary | undefined>(undefined);
+  const creationFormRef = useRef<HTMLFormElement>(null);
+  const importMnemonicFormRef = useRef<HTMLFormElement>(null);
   const emailCredentialFormRef = useRef<HTMLFormElement>(null);
 
   const setAutoLockMinutes = useCallback((minutes: AutoLockMinutes) => {
@@ -208,6 +225,27 @@ export function WalletAccessWorkspace() {
     setEmailCredentialsEnabled(false);
     setEmailPasswordVisible(false);
   }, [clearEmailCredentialDom]);
+
+  const clearBip39PassphraseDom = useCallback(() => {
+    const forms = [creationFormRef.current, importMnemonicFormRef.current];
+    for (const form of forms) {
+      if (!form) continue;
+      for (const name of [
+        BIP39_PASSPHRASE_FIELD,
+        BIP39_PASSPHRASE_CONFIRMATION_FIELD,
+      ]) {
+        const field = form.elements.namedItem(name);
+        if (field instanceof HTMLInputElement) field.value = '';
+      }
+    }
+  }, []);
+
+  const clearBip39PassphraseFields = useCallback(() => {
+    clearBip39PassphraseDom();
+    setCreationPassphraseVisible(false);
+    setCreationPassphraseConfirmationVisible(false);
+    setImportPassphraseVisible(false);
+  }, [clearBip39PassphraseDom]);
 
   const enableEmailCredentialFields = useCallback(() => {
     const form = emailCredentialFormRef.current;
@@ -298,6 +336,21 @@ export function WalletAccessWorkspace() {
   }, [clearEmailCredentialDom, clearEmailCredentialFields]);
 
   useEffect(() => {
+    const clearWhenHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        clearBip39PassphraseFields();
+      }
+    };
+    window.addEventListener('pagehide', clearBip39PassphraseFields);
+    document.addEventListener('visibilitychange', clearWhenHidden);
+    return () => {
+      window.removeEventListener('pagehide', clearBip39PassphraseFields);
+      document.removeEventListener('visibilitychange', clearWhenHidden);
+      clearBip39PassphraseDom();
+    };
+  }, [clearBip39PassphraseDom, clearBip39PassphraseFields]);
+
+  useEffect(() => {
     if (!activeWallet || autoLockMinutes === 0) return;
     let timer: ReturnType<typeof setTimeout>;
     const resetTimer = () => {
@@ -364,6 +417,26 @@ export function WalletAccessWorkspace() {
   async function createMnemonic(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
+    const passphraseField = formField<HTMLInputElement>(
+      form,
+      BIP39_PASSPHRASE_FIELD,
+    );
+    const passphraseConfirmationField = formField<HTMLInputElement>(
+      form,
+      BIP39_PASSPHRASE_CONFIRMATION_FIELD,
+    );
+    if (
+      !bip39PassphrasesMatch(
+        passphraseField.value,
+        passphraseConfirmationField.value,
+      )
+    ) {
+      setError(t('errors.bip39PassphraseMismatch'));
+      clearBip39PassphraseFields();
+      return;
+    }
+    let bip39Passphrase = normalizeBip39Passphrase(passphraseField.value);
+    const usesBip39Passphrase = bip39Passphrase.length > 0;
     const wordCount = Number(
       formField<HTMLSelectElement>(form, 'wordCount').value,
     ) as 12 | 24;
@@ -373,11 +446,15 @@ export function WalletAccessWorkspace() {
       const diceEntropyBase64 = diceEnabled
         ? diceSession.entropyDigestBase64()
         : undefined;
-      const created = await clientRef.current.request({
+      const creationRequest = clientRef.current.request({
         type: 'createMnemonic',
         wordCount,
+        bip39Passphrase,
         ...(diceEntropyBase64 ? { diceEntropyBase64 } : {}),
       });
+      bip39Passphrase = '';
+      clearBip39PassphraseFields();
+      const created = await creationRequest;
       const { mnemonic, ...summary } = created;
       // Do not let the transport-only mnemonic property leak into either the
       // session ref or the verification-stage summary object.
@@ -389,6 +466,7 @@ export function WalletAccessWorkspace() {
         wordIndexes: createSeedBackupWordIndexes(
           summary.wordCount ?? wordCount,
         ),
+        usesBip39Passphrase,
         stage: 'backup',
       });
       diceSession.clear();
@@ -396,6 +474,8 @@ export function WalletAccessWorkspace() {
     } catch (caught) {
       setError(translateWalletError(caught, t, 'local'));
     } finally {
+      bip39Passphrase = '';
+      clearBip39PassphraseFields();
       setBusy(false);
     }
   }
@@ -441,20 +521,31 @@ export function WalletAccessWorkspace() {
 
   async function importMnemonic(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    const field = formField<HTMLInputElement>(event.currentTarget, 'mnemonic');
+    const form = event.currentTarget;
+    const field = formField<HTMLInputElement>(form, 'mnemonic');
+    const passphraseField = formField<HTMLInputElement>(
+      form,
+      BIP39_PASSPHRASE_FIELD,
+    );
+    let bip39Passphrase = normalizeBip39Passphrase(passphraseField.value);
     setBusy(true);
     setError(undefined);
     try {
-      activate(
-        await clientRef.current.request({
-          type: 'importMnemonic',
-          mnemonic: field.value,
-        }),
-      );
+      const importRequest = clientRef.current.request({
+        type: 'importMnemonic',
+        mnemonic: field.value,
+        bip39Passphrase,
+      });
+      field.value = '';
+      bip39Passphrase = '';
+      clearBip39PassphraseFields();
+      activate(await importRequest);
     } catch (caught) {
       setError(translateWalletError(caught, t, 'local'));
     } finally {
       field.value = '';
+      bip39Passphrase = '';
+      clearBip39PassphraseFields();
       setBusy(false);
     }
   }
@@ -586,21 +677,35 @@ export function WalletAccessWorkspace() {
                   description={t('backup.creationNoTimeout')}
                   mnemonic={pendingCreation.mnemonic}
                 />
-                <Button
-                  className="mt-5 w-full"
-                  type="button"
-                  onClick={() => {
+                <form
+                  className="mt-5"
+                  onSubmit={(event) => {
+                    event.preventDefault();
                     setError(undefined);
                     setPendingCreation({
                       summary: pendingCreation.summary,
                       wordIndexes: pendingCreation.wordIndexes,
+                      usesBip39Passphrase: pendingCreation.usesBip39Passphrase,
                       stage: 'verify',
                     });
                   }}
                 >
-                  {t('backup.continueVerification')}
-                  <ArrowRight data-icon="inline-end" />
-                </Button>
+                  {pendingCreation.usesBip39Passphrase ? (
+                    <label className="mb-4 flex items-start gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.055] p-3 text-sm leading-6 text-amber-50">
+                      <input
+                        className="mt-1"
+                        name="bip39PassphraseSaved"
+                        type="checkbox"
+                        required
+                      />
+                      <span>{t('backup.bip39PassphraseSaved')}</span>
+                    </label>
+                  ) : null}
+                  <Button className="w-full" type="submit">
+                    {t('backup.continueVerification')}
+                    <ArrowRight data-icon="inline-end" />
+                  </Button>
+                </form>
               </>
             ) : (
               <p className="text-sm leading-6 text-slate-400">
@@ -698,6 +803,7 @@ export function WalletAccessWorkspace() {
                   aria-selected={active}
                   onClick={() => {
                     clearEmailCredentialFields();
+                    clearBip39PassphraseFields();
                     setSource(policy.kind);
                     setError(undefined);
                     setMnemonicVisible(false);
@@ -744,6 +850,7 @@ export function WalletAccessWorkspace() {
                       type="button"
                       aria-pressed={bip39Mode === mode}
                       onClick={() => {
+                        clearBip39PassphraseFields();
                         setBip39Mode(mode);
                         setError(undefined);
                       }}
@@ -761,7 +868,12 @@ export function WalletAccessWorkspace() {
                     <h2 className="mb-5 text-lg font-black tracking-tight text-white">
                       {t('access.newPhrase')}
                     </h2>
-                    <form className="space-y-4" onSubmit={createMnemonic}>
+                    <form
+                      ref={creationFormRef}
+                      className="space-y-4"
+                      onSubmit={createMnemonic}
+                      autoComplete="off"
+                    >
                       <label className="text-xs font-semibold text-slate-300">
                         {t('access.length')}
                         <select
@@ -820,6 +932,55 @@ export function WalletAccessWorkspace() {
                           </div>
                         </div>
                       ) : null}
+                      <details
+                        className="rounded-xl border border-white/8 bg-slate-950/45 p-3"
+                        onToggle={(event) => {
+                          if (!event.currentTarget.open) {
+                            clearBip39PassphraseFields();
+                          }
+                        }}
+                      >
+                        <summary className="cursor-pointer text-sm font-bold text-slate-200 outline-none focus-visible:text-sky-200">
+                          {t('access.bip39PassphraseTitle')}
+                        </summary>
+                        <div className="mt-4 space-y-4">
+                          <p className="text-xs leading-5 text-amber-100/90">
+                            {t('access.bip39PassphraseCreateWarning')}
+                          </p>
+                          <SecretInput
+                            autoCapitalize="none"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            label={t('access.bip39PassphraseLabel')}
+                            name={BIP39_PASSPHRASE_FIELD}
+                            onToggle={() =>
+                              setCreationPassphraseVisible(
+                                (visible) => !visible,
+                              )
+                            }
+                            placeholder={t('access.bip39PassphrasePlaceholder')}
+                            revealed={creationPassphraseVisible}
+                            spellCheck={false}
+                          />
+                          <SecretInput
+                            autoCapitalize="none"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            label={t('access.bip39PassphraseConfirmLabel')}
+                            name={BIP39_PASSPHRASE_CONFIRMATION_FIELD}
+                            onToggle={() =>
+                              setCreationPassphraseConfirmationVisible(
+                                (visible) => !visible,
+                              )
+                            }
+                            placeholder={t(
+                              'access.bip39PassphraseConfirmPlaceholder',
+                            )}
+                            revealed={creationPassphraseConfirmationVisible}
+                            spellCheck={false}
+                          />
+                        </div>
+                      </details>
                       <Button
                         disabled={busy}
                         size="lg"
@@ -844,6 +1005,7 @@ export function WalletAccessWorkspace() {
                       {t('access.restore')}
                     </h2>
                     <form
+                      ref={importMnemonicFormRef}
                       className="space-y-4"
                       onSubmit={importMnemonic}
                       autoComplete="off"
@@ -862,6 +1024,36 @@ export function WalletAccessWorkspace() {
                         revealed={mnemonicVisible}
                         spellCheck={false}
                       />
+                      <details
+                        className="rounded-xl border border-white/8 bg-slate-950/45 p-3"
+                        onToggle={(event) => {
+                          if (!event.currentTarget.open) {
+                            clearBip39PassphraseFields();
+                          }
+                        }}
+                      >
+                        <summary className="cursor-pointer text-sm font-bold text-slate-200 outline-none focus-visible:text-sky-200">
+                          {t('access.bip39PassphraseTitle')}
+                        </summary>
+                        <div className="mt-4 space-y-4">
+                          <p className="text-xs leading-5 text-amber-100/90">
+                            {t('access.bip39PassphraseImportWarning')}
+                          </p>
+                          <SecretInput
+                            autoCapitalize="none"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            label={t('access.bip39PassphraseLabel')}
+                            name={BIP39_PASSPHRASE_FIELD}
+                            onToggle={() =>
+                              setImportPassphraseVisible((visible) => !visible)
+                            }
+                            placeholder={t('access.bip39PassphrasePlaceholder')}
+                            revealed={importPassphraseVisible}
+                            spellCheck={false}
+                          />
+                        </div>
+                      </details>
                       <Button
                         disabled={busy}
                         size="lg"

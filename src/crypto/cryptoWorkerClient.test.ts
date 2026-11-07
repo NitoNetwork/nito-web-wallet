@@ -94,15 +94,41 @@ describe('CryptoWorkerClient', () => {
   it('fails closed when a worker request times out', async () => {
     vi.useFakeTimers();
     try {
-      const worker = new MockWorker();
-      const client = new CryptoWorkerClient(() => asWorkerLike(worker), 10);
-      const resultPromise = client.request({ type: 'health' });
-      const rejection = expect(resultPromise).rejects.toMatchObject({
+      const workers = [new MockWorker(), new MockWorker()];
+      let workerIndex = 0;
+      const client = new CryptoWorkerClient(
+        () => asWorkerLike(workers[workerIndex++]!),
+        10,
+      );
+      const firstPromise = client.request({ type: 'health' });
+      const secondPromise = client.request({ type: 'health' });
+      const firstRejection = expect(firstPromise).rejects.toMatchObject({
+        code: 'CRYPTO_WORKER_TIMEOUT',
+      });
+      const secondRejection = expect(secondPromise).rejects.toMatchObject({
         code: 'CRYPTO_WORKER_TIMEOUT',
       });
       await vi.advanceTimersByTimeAsync(11);
-      await rejection;
+      await Promise.all([firstRejection, secondRejection]);
+
+      expect(workers[0]!.terminateCount).toBe(1);
+
+      const recoveryPromise = client.request({ type: 'health' });
+      const recoveryRequest = workers[1]!.messages[0] as { id: string };
+      workers[1]!.emit('message', {
+        id: recoveryRequest.id,
+        ok: true,
+        result: {
+          abiVersion: 1,
+          transparentOnly: true,
+          sources: ['bip39-hd', 'single-private-key', 'email-credentials'],
+          scriptTypes: ['p2pkh', 'p2sh-p2wpkh', 'p2wpkh', 'p2tr'],
+          maxDerivationIndex: 9_999,
+        },
+      });
+      await expect(recoveryPromise).resolves.toMatchObject({ abiVersion: 1 });
       client.dispose();
+      expect(workers[1]!.terminateCount).toBe(1);
     } finally {
       vi.useRealTimers();
     }

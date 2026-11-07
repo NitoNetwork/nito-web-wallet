@@ -1,4 +1,7 @@
-import type { TransparentScriptType, WalletSourceKind } from '../domain/wallet-policy';
+import type {
+  TransparentScriptType,
+  WalletSourceKind,
+} from '../domain/wallet-policy';
 
 export type DerivedAddress = {
   path: string;
@@ -51,8 +54,17 @@ export type CryptoWorkerCapabilities = {
 
 export type CryptoWorkerCommand =
   | { type: 'health' }
-  | { type: 'createMnemonic'; wordCount: 12 | 24; diceEntropyBase64?: string }
-  | { type: 'importMnemonic'; mnemonic: string }
+  | {
+      type: 'createMnemonic';
+      wordCount: 12 | 24;
+      diceEntropyBase64?: string;
+      bip39Passphrase?: string;
+    }
+  | {
+      type: 'importMnemonic';
+      mnemonic: string;
+      bip39Passphrase?: string;
+    }
   | { type: 'importPrivateKey'; privateKey: string }
   | { type: 'importEmailCredentials'; email: string; password: string }
   | {
@@ -94,10 +106,13 @@ export type CryptoWorkerResponse =
   | { id: string; ok: true; result: unknown }
   | { id: string; ok: false; error: { code: string; message: string } };
 
-export function isCryptoWorkerResponse(value: unknown): value is CryptoWorkerResponse {
+export function isCryptoWorkerResponse(
+  value: unknown,
+): value is CryptoWorkerResponse {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<CryptoWorkerResponse>;
-  if (typeof candidate.id !== 'string' || typeof candidate.ok !== 'boolean') return false;
+  if (typeof candidate.id !== 'string' || typeof candidate.ok !== 'boolean')
+    return false;
   if (candidate.ok) return 'result' in candidate;
   return (
     'error' in candidate &&

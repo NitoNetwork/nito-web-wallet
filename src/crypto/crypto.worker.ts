@@ -4,6 +4,12 @@ import {
   normalizeEmailPassword,
 } from '../compat/email-credentials';
 import { HD_ACCOUNT_TEMPLATES, deriveHdPath } from '../domain/wallet-policy';
+import { normalizeBip39Passphrase } from './bip39Passphrase';
+import {
+  decodeBip39SessionSecret,
+  encodeBip39SessionSecret,
+  wipeBip39SessionSecret,
+} from './bip39SessionSecret';
 import {
   createPasswordSecretVault,
   createRandomSecretVault,
@@ -12,7 +18,11 @@ import {
   destroySecretVault,
   type SecretVault,
 } from './secretVault';
-import { NitoCryptoError, NitoWasmCrypto, instantiateNitoWasmCrypto } from './wasmAbi';
+import {
+  NitoCryptoError,
+  NitoWasmCrypto,
+  instantiateNitoWasmCrypto,
+} from './wasmAbi';
 import type {
   CryptoWorkerCapabilities,
   CryptoWorkerCommand,
@@ -25,7 +35,10 @@ import type {
 
 type CryptoWorkerScope = {
   readonly location: Location;
-  addEventListener(type: 'message', listener: (event: MessageEvent<unknown>) => void): void;
+  addEventListener(
+    type: 'message',
+    listener: (event: MessageEvent<unknown>) => void,
+  ): void;
   postMessage(message: CryptoWorkerResponse): void;
   close(): void;
 };
@@ -58,7 +71,10 @@ type ActiveSession =
     };
 
 const workerScope = globalThis as unknown as CryptoWorkerScope;
-const WASM_URL = new URL('/wasm/nito_wallet_crypto_web.wasm', workerScope.location.origin);
+const WASM_URL = new URL(
+  '/wasm/nito_wallet_crypto_web.wasm',
+  workerScope.location.origin,
+);
 const CAPABILITIES: CryptoWorkerCapabilities = {
   abiVersion: 1,
   transparentOnly: true,
@@ -70,7 +86,7 @@ const CAPABILITIES: CryptoWorkerCapabilities = {
 let cryptoPromise: Promise<NitoWasmCrypto> | undefined;
 let activeSession: ActiveSession | undefined;
 
-const BIP39_VAULT_CONTEXT = 'nito-wallet-web:bip39-session:v1';
+const BIP39_VAULT_CONTEXT = 'nito-wallet-web:bip39-session:v2';
 const PRIVATE_KEY_VAULT_CONTEXT = 'nito-wallet-web:private-key-session:v1';
 const emailVaultContext = (email: string) =>
   `nito-wallet-web:email-session:v1:${email}`;
@@ -103,16 +119,25 @@ function clearSession(): void {
 
 function assertSession(sessionId: string): ActiveSession {
   if (!activeSession || activeSession.id !== sessionId) {
-    throw new NitoCryptoError('SESSION_LOCKED', 'The wallet session is locked or expired.');
+    throw new NitoCryptoError(
+      'SESSION_LOCKED',
+      'The wallet session is locked or expired.',
+    );
   }
   return activeSession;
 }
 
-function normalizeMnemonic(input: string): { mnemonic: string; wordCount: 12 | 24 } {
+function normalizeMnemonic(input: string): {
+  mnemonic: string;
+  wordCount: 12 | 24;
+} {
   const mnemonic = input.trim().toLowerCase().split(/\s+/u).join(' ');
   const count = mnemonic ? mnemonic.split(' ').length : 0;
   if (count !== 12 && count !== 24) {
-    throw new NitoCryptoError('INVALID_MNEMONIC', 'A BIP39 phrase must contain 12 or 24 words.');
+    throw new NitoCryptoError(
+      'INVALID_MNEMONIC',
+      'A BIP39 phrase must contain 12 or 24 words.',
+    );
   }
   return { mnemonic, wordCount: count };
 }
@@ -124,53 +149,99 @@ function primaryHdRequests() {
   }));
 }
 
+async function createBip39SecretVault(
+  mnemonic: string,
+  bip39Passphrase: string,
+): Promise<SecretVault> {
+  let payload = encodeBip39SessionSecret(mnemonic, bip39Passphrase);
+  try {
+    return await createRandomSecretVault(payload, BIP39_VAULT_CONTEXT);
+  } finally {
+    payload = '';
+  }
+}
+
+async function decryptBip39SecretVault(vault: SecretVault) {
+  let payload = await decryptSecretVault(vault);
+  try {
+    return decodeBip39SessionSecret(payload);
+  } finally {
+    payload = '';
+  }
+}
+
 async function openHdSession(
   mnemonicInput: string,
   source: 'bip39-hd' | 'email-credentials',
   createdAt = new Date().toISOString(),
   email?: string,
   emailPassword?: string,
+  bip39PassphraseInput = '',
 ): Promise<WalletSessionSummary> {
   const crypto = await loadCrypto();
-  const { mnemonic, wordCount } = normalizeMnemonic(mnemonicInput);
-  const primaryAddresses = crypto.invoke<DerivedAddress[]>('deriveAddresses', {
-    mnemonic,
-    requests: primaryHdRequests(),
-  });
-  clearSession();
-  const id = cryptoRandomId();
-  if (source === 'email-credentials') {
-    if (!email || emailPassword === undefined) {
-      throw new NitoCryptoError('EMAIL_REQUIRED', 'Wallet email is unavailable.');
-    }
-    const normalizedEmail = normalizeEmail(email);
-    const secretVault = await createPasswordSecretVault(
-      mnemonic,
-      normalizeEmailPassword(emailPassword),
-      normalizedEmail,
-      emailVaultContext(normalizedEmail),
+  const normalizedMnemonic = normalizeMnemonic(mnemonicInput);
+  const { wordCount } = normalizedMnemonic;
+  let mnemonic = normalizedMnemonic.mnemonic;
+  let bip39Passphrase =
+    source === 'bip39-hd' ? normalizeBip39Passphrase(bip39PassphraseInput) : '';
+  try {
+    const primaryAddresses = crypto.invoke<DerivedAddress[]>(
+      'deriveAddresses',
+      source === 'bip39-hd'
+        ? {
+            mnemonic,
+            bip39Passphrase,
+            requests: primaryHdRequests(),
+          }
+        : {
+            mnemonic,
+            requests: primaryHdRequests(),
+          },
     );
-    activeSession = {
-      id,
-      source,
-      secretVault,
-      wordCount,
-      email: normalizedEmail,
-      createdAt,
-      primaryAddresses,
-    };
-  } else {
-    const secretVault = await createRandomSecretVault(mnemonic, BIP39_VAULT_CONTEXT);
-    activeSession = {
-      id,
-      source,
-      secretVault,
-      wordCount,
-      createdAt,
-      primaryAddresses,
-    };
+    clearSession();
+    const id = cryptoRandomId();
+    if (source === 'email-credentials') {
+      if (!email || emailPassword === undefined) {
+        throw new NitoCryptoError(
+          'EMAIL_REQUIRED',
+          'Wallet email is unavailable.',
+        );
+      }
+      const normalizedEmail = normalizeEmail(email);
+      const secretVault = await createPasswordSecretVault(
+        mnemonic,
+        normalizeEmailPassword(emailPassword),
+        normalizedEmail,
+        emailVaultContext(normalizedEmail),
+      );
+      activeSession = {
+        id,
+        source,
+        secretVault,
+        wordCount,
+        email: normalizedEmail,
+        createdAt,
+        primaryAddresses,
+      };
+    } else {
+      const secretVault = await createBip39SecretVault(
+        mnemonic,
+        bip39Passphrase,
+      );
+      activeSession = {
+        id,
+        source,
+        secretVault,
+        wordCount,
+        createdAt,
+        primaryAddresses,
+      };
+    }
+    return { sessionId: id, source, hd: true, wordCount, primaryAddresses };
+  } finally {
+    mnemonic = '';
+    bip39Passphrase = '';
   }
-  return { sessionId: id, source, hd: true, wordCount, primaryAddresses };
 }
 
 async function openPrivateKeySession(
@@ -178,10 +249,15 @@ async function openPrivateKeySession(
   createdAt = new Date().toISOString(),
 ): Promise<WalletSessionSummary> {
   const crypto = await loadCrypto();
-  const info = crypto.invoke<PrivateKeyInfo>('inspectPrivateKey', { privateKey });
+  const info = crypto.invoke<PrivateKeyInfo>('inspectPrivateKey', {
+    privateKey,
+  });
   clearSession();
   const id = cryptoRandomId();
-  const secretVault = await createRandomSecretVault(privateKey, PRIVATE_KEY_VAULT_CONTEXT);
+  const secretVault = await createRandomSecretVault(
+    privateKey,
+    PRIVATE_KEY_VAULT_CONTEXT,
+  );
   activeSession = {
     id,
     source: 'single-private-key',
@@ -201,7 +277,10 @@ async function openPrivateKeySession(
 
 function cryptoRandomId(): string {
   if (typeof crypto.randomUUID !== 'function') {
-    throw new NitoCryptoError('ENTROPY_UNAVAILABLE', 'Secure session identifiers are unavailable.');
+    throw new NitoCryptoError(
+      'ENTROPY_UNAVAILABLE',
+      'Secure session identifiers are unavailable.',
+    );
   }
   return crypto.randomUUID();
 }
@@ -212,19 +291,39 @@ async function execute(command: CryptoWorkerCommand): Promise<unknown> {
     case 'health':
       return CAPABILITIES;
     case 'createMnemonic': {
-      const generated = crypto.invoke<{ mnemonic: string }>('generateMnemonic', {
-        wordCount: command.wordCount,
-        ...(command.diceEntropyBase64
-          ? { additionalEntropyBase64: command.diceEntropyBase64 }
-          : {}),
-      });
-      const summary = await openHdSession(generated.mnemonic, 'bip39-hd');
+      const generated = crypto.invoke<{ mnemonic: string }>(
+        'generateMnemonic',
+        {
+          wordCount: command.wordCount,
+          ...(command.diceEntropyBase64
+            ? { additionalEntropyBase64: command.diceEntropyBase64 }
+            : {}),
+        },
+      );
+      const summary = await openHdSession(
+        generated.mnemonic,
+        'bip39-hd',
+        new Date().toISOString(),
+        undefined,
+        undefined,
+        command.bip39Passphrase ?? '',
+      );
       return { ...summary, mnemonic: generated.mnemonic };
     }
     case 'importMnemonic':
-      return openHdSession(command.mnemonic, 'bip39-hd');
+      return openHdSession(
+        command.mnemonic,
+        'bip39-hd',
+        new Date().toISOString(),
+        undefined,
+        undefined,
+        command.bip39Passphrase ?? '',
+      );
     case 'importEmailCredentials': {
-      const mnemonic = await deriveEmailCredentialMnemonic(command.email, command.password);
+      const mnemonic = await deriveEmailCredentialMnemonic(
+        command.email,
+        command.password,
+      );
       return openHdSession(
         mnemonic,
         'email-credentials',
@@ -260,15 +359,20 @@ async function execute(command: CryptoWorkerCommand): Promise<unknown> {
           'Backup verification answers are incomplete or invalid.',
         );
       }
-      let mnemonic = await decryptSecretVault(session.secretVault);
+      const secret = await decryptBip39SecretVault(session.secretVault);
       try {
-        const words = mnemonic.split(' ');
-        const valid = command.answers.every(
-          ({ wordIndex, word }) => words[wordIndex] === word.trim().toLowerCase(),
-        );
-        return { valid };
+        const words = secret.mnemonic.split(' ');
+        try {
+          const valid = command.answers.every(
+            ({ wordIndex, word }) =>
+              words[wordIndex] === word.trim().toLowerCase(),
+          );
+          return { valid };
+        } finally {
+          words.fill('');
+        }
       } finally {
-        mnemonic = '';
+        wipeBip39SessionSecret(secret);
       }
     }
     case 'deriveAddresses': {
@@ -278,6 +382,18 @@ async function execute(command: CryptoWorkerCommand): Promise<unknown> {
           'NOT_HD_WALLET',
           'A single private key has no deterministic derivation branches.',
         );
+      }
+      if (session.source === 'bip39-hd') {
+        const secret = await decryptBip39SecretVault(session.secretVault);
+        try {
+          return crypto.invoke<DerivedAddress[]>('deriveAddresses', {
+            mnemonic: secret.mnemonic,
+            bip39Passphrase: secret.bip39Passphrase,
+            requests: command.requests,
+          });
+        } finally {
+          wipeBip39SessionSecret(secret);
+        }
       }
       let mnemonic = await decryptSecretVault(session.secretVault);
       try {
@@ -291,9 +407,22 @@ async function execute(command: CryptoWorkerCommand): Promise<unknown> {
     }
     case 'signPsbt': {
       const session = assertSession(command.sessionId);
+      if (session.source === 'bip39-hd') {
+        const secret = await decryptBip39SecretVault(session.secretVault);
+        try {
+          return crypto.invoke('signPsbt', {
+            mnemonic: secret.mnemonic,
+            bip39Passphrase: secret.bip39Passphrase,
+            psbtBase64: command.psbtBase64,
+            signers: command.signers,
+          });
+        } finally {
+          wipeBip39SessionSecret(secret);
+        }
+      }
       let secret = await decryptSecretVault(session.secretVault);
       try {
-        if (session.source !== 'single-private-key') {
+        if (session.source === 'email-credentials') {
           return crypto.invoke('signPsbt', {
             mnemonic: secret,
             psbtBase64: command.psbtBase64,
@@ -338,8 +467,13 @@ async function execute(command: CryptoWorkerCommand): Promise<unknown> {
           );
         }
       }
-      const mnemonic = await decryptSecretVault(session.secretVault);
-      return { mnemonic, wordCount: session.wordCount };
+      const secret = await decryptBip39SecretVault(session.secretVault);
+      try {
+        return { mnemonic: secret.mnemonic, wordCount: session.wordCount };
+      } finally {
+        secret.bip39Passphrase = '';
+        secret.mnemonic = '';
+      }
     }
   }
 }
@@ -348,6 +482,7 @@ function wipeCommandSecrets(command: CryptoWorkerCommand): void {
   switch (command.type) {
     case 'importMnemonic':
       command.mnemonic = '';
+      command.bip39Passphrase = undefined;
       break;
     case 'importPrivateKey':
       command.privateKey = '';
@@ -358,6 +493,7 @@ function wipeCommandSecrets(command: CryptoWorkerCommand): void {
       break;
     case 'createMnemonic':
       command.diceEntropyBase64 = undefined;
+      command.bip39Passphrase = undefined;
       break;
     case 'signPsbt':
       command.psbtBase64 = '';
@@ -390,9 +526,17 @@ workerScope.addEventListener('message', (event) => {
       wipeResultSecrets(result);
     })
     .catch((error: unknown) => {
-      const code = error instanceof NitoCryptoError ? error.code : 'CRYPTO_WORKER_ERROR';
-      const message = error instanceof Error ? error.message : 'Cryptographic operation failed.';
-      workerScope.postMessage({ id: request.id!, ok: false, error: { code, message } });
+      const code =
+        error instanceof NitoCryptoError ? error.code : 'CRYPTO_WORKER_ERROR';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Cryptographic operation failed.';
+      workerScope.postMessage({
+        id: request.id!,
+        ok: false,
+        error: { code, message },
+      });
     })
     .finally(() => wipeCommandSecrets(command));
 });

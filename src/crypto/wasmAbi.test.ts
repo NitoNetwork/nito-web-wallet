@@ -3,7 +3,11 @@ import { resolve } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { NitoCryptoError, NitoWasmCrypto, instantiateNitoWasmCrypto } from './wasmAbi';
+import {
+  NitoCryptoError,
+  NitoWasmCrypto,
+  instantiateNitoWasmCrypto,
+} from './wasmAbi';
 
 const MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -15,19 +19,24 @@ describe('compiled Nito crypto WASM ABI', () => {
     const bytes = await readFile(
       resolve(process.cwd(), 'public', 'wasm', 'nito_wallet_crypto_web.wasm'),
     );
-    wasm = await instantiateNitoWasmCrypto(bytes, (target) => target.fill(0x5a));
+    wasm = await instantiateNitoWasmCrypto(bytes, (target) =>
+      target.fill(0x5a),
+    );
   });
 
   it('executes the mobile BIP39 address derivation inside real WASM', () => {
-    const result = wasm.invoke<Array<{ address: string; scriptType: string }>>('deriveAddresses', {
-      mnemonic: MNEMONIC,
-      requests: [
-        { path: "m/44'/0'/0'/0/0", scriptType: 'p2pkh' },
-        { path: "m/49'/0'/0'/0/0", scriptType: 'p2sh-p2wpkh' },
-        { path: "m/84'/0'/0'/0/0", scriptType: 'p2wpkh' },
-        { path: "m/86'/0'/0'/0/0", scriptType: 'p2tr' },
-      ],
-    });
+    const result = wasm.invoke<Array<{ address: string; scriptType: string }>>(
+      'deriveAddresses',
+      {
+        mnemonic: MNEMONIC,
+        requests: [
+          { path: "m/44'/0'/0'/0/0", scriptType: 'p2pkh' },
+          { path: "m/49'/0'/0'/0/0", scriptType: 'p2sh-p2wpkh' },
+          { path: "m/84'/0'/0'/0/0", scriptType: 'p2wpkh' },
+          { path: "m/86'/0'/0'/0/0", scriptType: 'p2tr' },
+        ],
+      },
+    );
 
     expect(result.map(({ address }) => address)).toEqual([
       '1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA',
@@ -43,9 +52,38 @@ describe('compiled Nito crypto WASM ABI', () => {
     ]);
   });
 
+  it('keeps empty compatibility and binds a normalized passphrase to every HD family', () => {
+    const requests = [
+      { path: "m/44'/0'/0'/0/0", scriptType: 'p2pkh' },
+      { path: "m/49'/0'/0'/1/1", scriptType: 'p2sh-p2wpkh' },
+      { path: "m/84'/0'/1'/0/2", scriptType: 'p2wpkh' },
+      { path: "m/86'/0'/1'/1/3", scriptType: 'p2tr' },
+    ] as const;
+    const derive = (request: Record<string, unknown>) =>
+      wasm.invoke<Array<{ address: string }>>('deriveAddresses', {
+        mnemonic: MNEMONIC,
+        requests,
+        ...request,
+      });
+    const absent = derive({});
+    const empty = derive({ bip39Passphrase: '' });
+    const composed = derive({ bip39Passphrase: 'é' });
+    const decomposed = derive({ bip39Passphrase: 'e\u0301' });
+
+    expect(empty).toEqual(absent);
+    expect(decomposed).toEqual(composed);
+    expect(composed.map(({ address }) => address)).not.toEqual(
+      absent.map(({ address }) => address),
+    );
+  });
+
   it('generates both allowed mnemonic sizes through the host CSPRNG boundary', () => {
-    const twelve = wasm.invoke<{ mnemonic: string }>('generateMnemonic', { wordCount: 12 });
-    const twentyFour = wasm.invoke<{ mnemonic: string }>('generateMnemonic', { wordCount: 24 });
+    const twelve = wasm.invoke<{ mnemonic: string }>('generateMnemonic', {
+      wordCount: 12,
+    });
+    const twentyFour = wasm.invoke<{ mnemonic: string }>('generateMnemonic', {
+      wordCount: 24,
+    });
     expect(twelve.mnemonic.split(' ')).toHaveLength(12);
     expect(twentyFour.mnemonic.split(' ')).toHaveLength(24);
   });

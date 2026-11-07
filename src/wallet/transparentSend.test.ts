@@ -1095,10 +1095,31 @@ describe('transparent send selection', () => {
     ]);
   });
 
-  it('signs one mixed transaction across all four scripts, both branches and account 1', async () => {
+  it('signs a passphrase multi-send and RBF across all scripts, branches and account 1', async () => {
+    const [
+      protectedExternal,
+      protectedInternal,
+      protectedRecipient,
+      protectedSecondRecipient,
+      protectedLegacy,
+      protectedP2shHistorical,
+      protectedTaprootInternal,
+    ] = wasm.invoke<DerivedAddress[]>('deriveAddresses', {
+      mnemonic: MNEMONIC,
+      bip39Passphrase: 'TREZOR',
+      requests: [
+        { path: "m/84'/0'/0'/0/0", scriptType: 'p2wpkh' },
+        { path: "m/84'/0'/0'/1/0", scriptType: 'p2wpkh' },
+        { path: "m/84'/0'/0'/0/1", scriptType: 'p2wpkh' },
+        { path: "m/86'/0'/0'/0/2", scriptType: 'p2tr' },
+        { path: "m/44'/0'/0'/0/0", scriptType: 'p2pkh' },
+        { path: "m/49'/0'/1'/0/0", scriptType: 'p2sh-p2wpkh' },
+        { path: "m/86'/0'/0'/1/1", scriptType: 'p2tr' },
+      ],
+    });
     const previous = new btc.Transaction({ allowUnknownInputs: true });
     previous.addOutput({
-      script: hexBytes(legacy.scriptHex),
+      script: hexBytes(protectedLegacy.scriptHex),
       amount: BigInt(25_000_000),
     });
     previous.addInput(
@@ -1112,7 +1133,7 @@ describe('transparent send selection', () => {
     );
     const definitions = [
       {
-        material: legacy,
+        material: protectedLegacy,
         account: 0 as const,
         accountKey: 'legacy' as const,
         accountPath: "m/44'/0'/0'",
@@ -1122,7 +1143,7 @@ describe('transparent send selection', () => {
         rawTx: previous.hex,
       },
       {
-        material: p2shHistorical,
+        material: protectedP2shHistorical,
         account: 1 as const,
         accountKey: 'p2sh' as const,
         accountPath: "m/49'/0'/1'",
@@ -1131,7 +1152,7 @@ describe('transparent send selection', () => {
         txid: '33'.repeat(32),
       },
       {
-        material: external,
+        material: protectedExternal,
         account: 0 as const,
         accountKey: 'bech32' as const,
         accountPath: "m/84'/0'/0'",
@@ -1140,7 +1161,7 @@ describe('transparent send selection', () => {
         txid: '11'.repeat(32),
       },
       {
-        material: taprootInternal,
+        material: protectedTaprootInternal,
         account: 0 as const,
         accountKey: 'taproot' as const,
         accountPath: "m/86'/0'/0'",
@@ -1149,27 +1170,25 @@ describe('transparent send selection', () => {
         txid: '22'.repeat(32),
       },
     ];
-    const owners = definitions.map(
-      (definition): ScannedAddress => ({
-        ...definition.material,
-        ownerKind: 'hd',
-        account: definition.account,
-        accountKey: definition.accountKey,
-        accountLabel: definition.accountKey,
-        accountPath: definition.accountPath,
-        recoveryOnly: definition.account === 1,
-        branch: definition.branch,
-        index: definition.index,
-        balance: {
-          confirmedSats: 25_000_000,
-          unconfirmedSats: 0,
-          totalSats: 25_000_000,
-        },
-        utxos: [],
-        history: [],
-        used: true,
-      }),
-    );
+    const owners = definitions.map((definition): ScannedAddress => ({
+      ...definition.material,
+      ownerKind: 'hd',
+      account: definition.account,
+      accountKey: definition.accountKey,
+      accountLabel: definition.accountKey,
+      accountPath: definition.accountPath,
+      recoveryOnly: definition.account === 1,
+      branch: definition.branch,
+      index: definition.index,
+      balance: {
+        confirmedSats: 25_000_000,
+        unconfirmedSats: 0,
+        totalSats: 25_000_000,
+      },
+      utxos: [],
+      history: [],
+      used: true,
+    }));
     const utxos = definitions.map((definition, index) => ({
       txid: definition.txid,
       vout: 0,
@@ -1183,7 +1202,7 @@ describe('transparent send selection', () => {
     owners.forEach((owner, index) => {
       owner.utxos = [utxos[index]!];
     });
-    const change = scannedAddress(internal, 'internal', 0, 0);
+    const change = scannedAddress(protectedInternal, 'internal', 0, 0);
     const snapshot: TransparentWalletSnapshot = {
       schemaVersion: 1,
       sourceKind: 'bip39-hd',
@@ -1204,16 +1223,25 @@ describe('transparent send selection', () => {
       scannedAt: '2026-08-30T12:00:00.000Z',
     };
     const requestedSigners: unknown[][] = [];
-    const transaction = await buildTransparentSend({
+    const transaction = await buildTransparentMultiSend({
       sessionId: 'opaque-test-session',
       snapshot,
-      toAddress: recipient.address,
-      amountSats: BigInt(99_000_000),
-      changeAddress: internal.address,
+      outputs: [
+        {
+          address: protectedRecipient.address,
+          amountSats: BigInt(49_000_000),
+        },
+        {
+          address: protectedSecondRecipient.address,
+          amountSats: BigInt(49_000_000),
+        },
+      ],
+      changeAddress: protectedInternal.address,
       signPsbt: async (_sessionId, psbtBase64, signers) => {
         requestedSigners.push(signers);
         return wasm.invoke<{ psbtBase64: string }>('signPsbt', {
           mnemonic: MNEMONIC,
+          bip39Passphrase: 'TREZOR',
           psbtBase64,
           signers,
         });
@@ -1236,10 +1264,11 @@ describe('transparent send selection', () => {
       sessionId: 'opaque-test-session',
       snapshot,
       original: transaction,
-      returnAddress: taprootInternal.address,
+      returnAddress: protectedTaprootInternal.address,
       signPsbt: async (_sessionId, psbtBase64, signers) =>
         wasm.invoke<{ psbtBase64: string }>('signPsbt', {
           mnemonic: MNEMONIC,
+          bip39Passphrase: 'TREZOR',
           psbtBase64,
           signers,
         }),
@@ -1249,7 +1278,7 @@ describe('transparent send selection', () => {
     expect(replacement.feeSats).toBeGreaterThan(transaction.feeSats);
     expect(replacement.walletInputs).toEqual(transaction.walletInputs);
     expect(replacement.walletOutputs).toEqual([
-      expect.objectContaining({ address: taprootInternal.address }),
+      expect.objectContaining({ address: protectedTaprootInternal.address }),
     ]);
   });
 
@@ -1328,9 +1357,26 @@ describe('transparent send selection', () => {
     ).rejects.toMatchObject({ code: 'no-spendable-utxo' });
   });
 
-  it('plans then signs a 21-input consolidation with the real WASM', async () => {
+  it('plans then signs a 21-input passphrase consolidation with the real WASM', async () => {
+    const [consolidationExternal, consolidationInternal] = wasm.invoke<
+      DerivedAddress[]
+    >('deriveAddresses', {
+      mnemonic: MNEMONIC,
+      bip39Passphrase: 'TREZOR',
+      requests: [
+        { path: "m/84'/0'/0'/0/7", scriptType: 'p2wpkh' },
+        { path: "m/84'/0'/0'/1/7", scriptType: 'p2wpkh' },
+      ],
+    });
     const snapshot = makeSnapshot();
     const owner = snapshot.addresses[0]!;
+    Object.assign(owner, consolidationExternal);
+    snapshot.addresses[1] = scannedAddress(
+      consolidationInternal,
+      'internal',
+      7,
+      0,
+    );
     const utxos = Array.from({ length: 21 }, (_, index) => ({
       txid: (index + 1).toString(16).padStart(2, '0').repeat(32),
       vout: 0,
@@ -1352,7 +1398,7 @@ describe('transparent send selection', () => {
     owner.utxos = utxos;
     const plan = planTransparentConsolidation({
       snapshot,
-      toAddress: internal.address,
+      toAddress: consolidationInternal.address,
     });
 
     expect(plan).toMatchObject({
@@ -1363,10 +1409,11 @@ describe('transparent send selection', () => {
     const prepared = await buildTransparentConsolidation({
       sessionId: 'opaque-test-session',
       snapshot,
-      toAddress: internal.address,
+      toAddress: consolidationInternal.address,
       signPsbt: async (_sessionId, psbtBase64, signers) =>
         wasm.invoke<{ psbtBase64: string }>('signPsbt', {
           mnemonic: MNEMONIC,
+          bip39Passphrase: 'TREZOR',
           psbtBase64,
           signers,
         }),
