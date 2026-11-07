@@ -2,7 +2,7 @@
 
 ## Runtime boundaries
 
-The React interface owns transient view state only. A dedicated Web Worker owns wallet sessions and calls the Rust/WASM cryptographic core for mnemonic generation, key derivation, address derivation, and PSBT signing. Electrum clients run outside the Worker and receive public addresses and signed transactions, never wallet secrets.
+The React interface owns transient view state only. A dedicated Web Worker owns wallet sessions and calls the Rust/WASM cryptographic core for mnemonic generation, key derivation, address derivation, and PSBT signing. Once a wallet session is opened, recovery phrases, optional BIP39 passphrases, and private keys are held in the Worker's encrypted, ephemeral session vault. Electrum clients run outside the Worker and receive public addresses and signed transactions, never wallet secrets.
 
 No backend account, application database, or wallet storage service is required.
 
@@ -10,7 +10,7 @@ No backend account, application database, or wallet storage service is required.
 
 The wallet supports three sources:
 
-1. BIP39 HD wallets with 12-word or 24-word recovery phrases.
+1. BIP39 HD wallets with 12-word or 24-word recovery phrases and an optional BIP39 passphrase.
 2. Deterministic email wallets derived locally from an exact email and password pair.
 3. A single WIF or hexadecimal private key.
 

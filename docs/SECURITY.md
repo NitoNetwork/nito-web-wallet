@@ -2,15 +2,15 @@
 
 ## Accepted wallet sources
 
-The wallet accepts 12-word and 24-word BIP39 phrases, NITO mainnet WIF keys, 32-byte hexadecimal private keys, and deterministic email/password pairs. XPRV input is intentionally unsupported.
+The wallet accepts 12-word and 24-word BIP39 phrases with an optional BIP39 passphrase, NITO mainnet WIF keys, 32-byte hexadecimal private keys, and deterministic email/password pairs. XPRV input is intentionally unsupported.
 
 Email and password input is local derivation, not remote authentication. Any change in capitalization, whitespace, or characters can produce a different wallet. Weak credential pairs may be vulnerable to offline guessing.
 
 ## Secret boundary
 
-Sensitive form values are sent directly to a dedicated Web Worker. Rust/WASM validates wallet material, derives addresses, and signs PSBTs inside that Worker.
+Sensitive form values are sent directly to a dedicated Web Worker. Rust/WASM validates wallet material, applies the BIP39-required Unicode NFKD normalization to passphrases, derives addresses, and signs PSBTs inside that Worker. A different passphrase intentionally derives a different valid wallet.
 
-Unlocked recovery phrases and private keys are stored in AES-256-GCM in-memory vaults under non-extractable Web Crypto keys. The Worker decrypts them only for the duration of an authorized operation and clears mutable buffers afterwards. Deterministic email wallets use a password-derived encryption key, and recovery phrase display requires the original password again.
+Unlocked recovery phrases, optional BIP39 passphrases, and private keys are stored in AES-256-GCM in-memory vaults under non-extractable Web Crypto keys. The Worker decrypts them only for the duration of an authorized operation and clears mutable buffers afterwards. Deterministic email wallets use a password-derived encryption key, and recovery phrase display requires the original password again.
 
 Generated recovery phrases are shown only on the backup screen. Moving to verification removes the phrase from the interface and returning to that screen is not possible. Leaving the page, changing windows during creation, locking the wallet, reaching an inactivity limit, or exceeding the configured background limit terminates the Worker and returns to wallet access.
 
@@ -18,7 +18,7 @@ JavaScript strings are immutable, so a browser cannot guarantee immediate physic
 
 ## Browser storage
 
-The application does not persist wallet secrets, credentials, snapshots, balances, UTXOs, transaction IDs, address allocations, or drafts in IndexedDB, local storage, session storage, cookies, or the Cache API.
+The application does not persist recovery phrases, BIP39 passphrases, private keys, wallet credentials, snapshots, balances, UTXOs, transaction IDs, address allocations, or drafts in IndexedDB, local storage, session storage, cookies, or the Cache API.
 
 Only the inactivity and background lock preferences are stored in the browser. HTTP responses use `Cache-Control: no-store`.
 

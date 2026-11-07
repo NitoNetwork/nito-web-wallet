@@ -9,7 +9,7 @@ NITO Web Wallet is a self-custodial browser wallet for transparent NITO transact
 
 ## Features
 
-- Create or restore 12-word and 24-word BIP39 HD wallets, with optional physical dice input during creation.
+- Create or restore 12- and 24-word BIP39 HD wallets with an optional BIP39 passphrase; creation can also include physical dice input.
 - Open a deterministic wallet from an email address and password, or import a WIF or hexadecimal private key.
 - Receive with Legacy, P2SH, Bech32, or Taproot HD addresses; Taproot is the default.
 - Send to multiple recipients, consolidate UTXOs, and attempt RBF cancellation.
@@ -57,13 +57,19 @@ Run the complete local validation suite:
 npm run check
 ```
 
-This checks version consistency, Rust/WASM, TypeScript, lint, tests, the production build, and deployment integrity. Run `npm run audit:production` separately to check production dependencies for known vulnerabilities.
+This checks version consistency, Rust/WASM, TypeScript, lint, tests, the production build, and deployment integrity. Before publishing a release, also verify the reproducible build and audit both the complete and production dependency graphs:
+
+```bash
+npm run build:reproducible
+npm audit
+npm run audit:production
+```
 
 ## Security
 
-Wallet credentials, recovery phrases, private keys, and wallet data are not persisted by the application. Only the inactivity and background lock preferences are saved in the browser.
+Wallet credentials, recovery phrases, BIP39 passphrases, private keys, and wallet data are not persisted by the application. Only the inactivity and background lock preferences are saved in the browser.
 
-Use a trusted device and keep recovery phrases offline. Browser extensions, injected scripts, or a compromised device can expose wallet secrets. Read the [security model](docs/SECURITY.md) before using real funds, and follow the [security policy](SECURITY.md) to report vulnerabilities privately.
+Use a trusted device and keep recovery phrases and BIP39 passphrases backed up exactly, separately, and offline. Browser extensions, injected scripts, or a compromised device can expose wallet secrets. Read the [security model](docs/SECURITY.md) before using real funds, and follow the [security policy](SECURITY.md) to report vulnerabilities privately.
 
 ## Documentation
 
