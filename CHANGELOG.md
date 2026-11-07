@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 — 2026-11-07
+
+- Add an optional BIP39 passphrase when creating or restoring an HD wallet.
+- Keep the passphrase in browser-only session memory and clear it with the wallet's other sensitive material.
+- Preserve compatibility with wallets created without a passphrase and explain the distinct-wallet behavior in all nine interface languages.
+
 ## 1.1.3 — 2026-11-01
 
 - Display the current wallet version in the footer with a direct link to its matching GitHub release tag.

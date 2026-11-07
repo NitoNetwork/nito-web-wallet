@@ -177,7 +177,10 @@ describe('wallet languages', () => {
       'This is not an extra seed word. Every passphrase opens a valid wallet, so a typo cannot be detected. Back it up exactly and separately. Without it, funds cannot be recovered.',
     );
     expect(MESSAGES.en['access.bip39PassphraseImportWarning']).toBe(
-      'Enter the exact passphrase used with this recovery phrase. A different value opens a different valid wallet without an error.',
+      'This passphrase is an additional secret associated with your recovery phrase.\nEnter it exactly: a different value opens a different wallet.',
+    );
+    expect(MESSAGES.fr['access.bip39PassphraseImportWarning']).toBe(
+      'Cette passphrase est un secret supplémentaire associé à votre phrase de récupération.\nSaisissez-la exactement : une valeur différente ouvre un wallet différent.',
     );
     const keys = [
       'access.bip39PassphraseTitle',

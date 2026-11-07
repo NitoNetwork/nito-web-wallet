@@ -56,7 +56,7 @@ export const pt = {
   "access.phrasePlaceholder": "Introduza as suas 12 ou 24 palavras",
   "access.bip39PassphraseTitle": "Frase-passe BIP39 opcional",
   "access.bip39PassphraseCreateWarning": "Isto não é uma palavra adicional da seed. Cada frase-passe abre uma carteira válida, por isso um erro de escrita não pode ser detetado. Guarde-a exatamente e em separado. Sem ela, os fundos não podem ser recuperados.",
-  "access.bip39PassphraseImportWarning": "Introduza a frase-passe exata utilizada com esta frase de recuperação. Um valor diferente abre outra carteira válida sem apresentar um erro.",
+  "access.bip39PassphraseImportWarning": "Esta frase-passe é um segredo adicional associado à sua frase de recuperação.\nIntroduza-a exatamente: um valor diferente abre outra carteira.",
   "access.bip39PassphraseLabel": "Frase-passe BIP39",
   "access.bip39PassphraseConfirmLabel": "Confirmar a frase-passe BIP39",
   "access.bip39PassphrasePlaceholder": "Introduza a frase-passe opcional",

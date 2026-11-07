@@ -1036,7 +1036,7 @@ export function WalletAccessWorkspace() {
                           {t('access.bip39PassphraseTitle')}
                         </summary>
                         <div className="mt-4 space-y-4">
-                          <p className="text-xs leading-5 text-amber-100/90">
+                          <p className="whitespace-pre-line text-xs leading-5 text-amber-100/90">
                             {t('access.bip39PassphraseImportWarning')}
                           </p>
                           <SecretInput

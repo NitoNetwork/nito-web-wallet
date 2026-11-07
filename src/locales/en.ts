@@ -54,7 +54,7 @@ export const en = {
   "access.phrasePlaceholder": "Enter your 12 or 24 words",
   "access.bip39PassphraseTitle": "Optional BIP39 passphrase",
   "access.bip39PassphraseCreateWarning": "This is not an extra seed word. Every passphrase opens a valid wallet, so a typo cannot be detected. Back it up exactly and separately. Without it, funds cannot be recovered.",
-  "access.bip39PassphraseImportWarning": "Enter the exact passphrase used with this recovery phrase. A different value opens a different valid wallet without an error.",
+  "access.bip39PassphraseImportWarning": "This passphrase is an additional secret associated with your recovery phrase.\nEnter it exactly: a different value opens a different wallet.",
   "access.bip39PassphraseLabel": "BIP39 passphrase",
   "access.bip39PassphraseConfirmLabel": "Confirm BIP39 passphrase",
   "access.bip39PassphrasePlaceholder": "Enter the optional passphrase",

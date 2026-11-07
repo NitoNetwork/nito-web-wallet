@@ -56,7 +56,7 @@ export const fr = {
   "access.phrasePlaceholder": "Saisissez vos 12 ou 24 mots",
   "access.bip39PassphraseTitle": "Passphrase BIP39 facultative",
   "access.bip39PassphraseCreateWarning": "Ce n’est pas un mot supplémentaire de la phrase de récupération. Chaque passphrase ouvre un wallet valide, donc une faute de frappe ne peut pas être détectée. Sauvegardez-la exactement et séparément. Sans elle, les fonds ne peuvent pas être récupérés.",
-  "access.bip39PassphraseImportWarning": "Saisissez la passphrase exacte utilisée avec cette phrase de récupération. Une valeur différente ouvre un autre wallet valide sans afficher d’erreur.",
+  "access.bip39PassphraseImportWarning": "Cette passphrase est un secret supplémentaire associé à votre phrase de récupération.\nSaisissez-la exactement : une valeur différente ouvre un wallet différent.",
   "access.bip39PassphraseLabel": "Passphrase BIP39",
   "access.bip39PassphraseConfirmLabel": "Confirmer la passphrase BIP39",
   "access.bip39PassphrasePlaceholder": "Saisissez la passphrase facultative",
