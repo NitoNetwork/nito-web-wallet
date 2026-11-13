@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.3 — 2026-11-13
+
+- Upgrade React, React DOM, and React Server Components to 19.2.9 to address the critical unauthenticated RSC vulnerability GHSA-xqc2-xf4c-x3h3.
+- Keep the three React runtime packages aligned on the patched 19.2 release series.
+
 ## 1.2.2 — 2026-11-07
 
 - Localize browser constraint messages in every wallet form according to the selected interface language.
