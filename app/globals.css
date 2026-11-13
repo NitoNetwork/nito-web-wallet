@@ -347,9 +347,15 @@
     aspect-ratio: 2 / 1;
     pointer-events: none;
     content: '';
-    background: url('/nito-256.png') center 16% / 148px auto no-repeat;
-    filter: drop-shadow(0 0 42px rgba(19, 134, 255, 0.28));
-    opacity: 0.13;
+    background:
+      radial-gradient(
+        ellipse at 50% 24%,
+        rgba(25, 175, 255, 0.68) 0%,
+        rgba(14, 102, 236, 0.28) 32%,
+        transparent 70%
+      );
+    filter: blur(28px);
+    opacity: 0.18;
     transform: translateX(-50%);
   }
 

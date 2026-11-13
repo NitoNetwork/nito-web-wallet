@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.2 — 2026-11-13
+
+- Replace the CSS-only access-screen logo watermark with a native Aurora glow to prevent Vinext from rewriting the asset to an unavailable static path.
+- Keep the official Nito logo in the rendered header and balance hero while eliminating the final hidden production 404.
+
 ## 1.3.1 — 2026-11-13
 
 - Remove invalid Vinext image preloads while preserving the official Nito logo on access and synchronization screens.
