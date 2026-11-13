@@ -9,9 +9,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'border-sky-300/20 bg-gradient-to-b from-[#318cf0] to-[#1769c2] text-primary-foreground hover:border-sky-200/35 hover:from-[#45a0ff] hover:to-[#1f75d6]',
+          'border-sky-200/35 bg-gradient-to-b from-[#249cff] via-[#087cff] to-[#075dce] text-primary-foreground shadow-[0_12px_30px_rgba(0,115,255,0.24),inset_0_1px_rgba(255,255,255,0.24)] hover:border-cyan-100/55 hover:from-[#3bb5ff] hover:via-[#138cff] hover:to-[#0867df] hover:shadow-[0_16px_38px_rgba(0,128,255,0.32)]',
         outline:
-          'border-sky-200/[0.12] bg-[#091525] text-slate-200 hover:border-sky-200/25 hover:bg-[#0c1a2d] hover:text-white aria-expanded:bg-muted aria-expanded:text-foreground',
+          'border-sky-300/25 bg-[linear-gradient(145deg,rgba(9,31,61,0.86),rgba(3,15,32,0.92))] text-slate-100 shadow-[inset_0_1px_rgba(215,242,255,0.055)] hover:border-sky-200/55 hover:bg-[#0b2445] hover:text-white hover:shadow-[0_12px_28px_rgba(0,92,206,0.18)] aria-expanded:bg-muted aria-expanded:text-foreground',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:
@@ -29,8 +29,7 @@ const buttonVariants = cva(
         icon: 'size-10',
         'icon-xs':
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        'icon-sm':
-          'size-9 rounded-xl in-data-[slot=button-group]:rounded-lg',
+        'icon-sm': 'size-9 rounded-xl in-data-[slot=button-group]:rounded-lg',
         'icon-lg': 'size-12 rounded-2xl',
       },
     },

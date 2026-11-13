@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 — 2026-11-13
+
+- Introduce the Aurora Core interface with the official Nito artwork, a luminous network horizon, and a desktop navigation rail.
+- Rework the balance overview around spendable, pending, immature, and synchronization states without changing wallet behavior.
+- Preserve compact mobile navigation, long-balance fitting, keyboard focus, forced-color fallbacks, and reduced-motion preferences.
+- Refresh shared cards, actions, access screens, and synchronization feedback with a consistent responsive visual system.
+
 ## 1.2.3 — 2026-11-13
 
 - Upgrade React, React DOM, and React Server Components to 19.2.9 to address the critical unauthenticated RSC vulnerability GHSA-xqc2-xf4c-x3h3.

@@ -61,7 +61,7 @@ export function WalletBalance({ satoshis }: { satoshis: number | bigint }) {
   return (
     <p
       ref={containerRef}
-      className="mt-4 w-full min-w-0 text-center font-mono text-4xl font-black sm:text-6xl"
+      className="mt-4 w-full min-w-0 text-center font-mono text-4xl font-black sm:text-6xl lg:text-7xl"
     >
       <span
         ref={lineRef}
@@ -69,7 +69,7 @@ export function WalletBalance({ satoshis }: { satoshis: number | bigint }) {
       >
         <span
           ref={amountRef}
-          className="bg-gradient-to-b from-white to-slate-300 bg-clip-text tracking-[-0.045em] text-transparent"
+          className="bg-gradient-to-b from-white via-sky-50 to-slate-300 bg-clip-text tracking-[-0.045em] text-transparent drop-shadow-[0_10px_34px_rgba(38,164,255,0.13)]"
         >
           {amount}
         </span>{' '}

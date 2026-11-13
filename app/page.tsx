@@ -14,20 +14,20 @@ const WALLET_RELEASE_URL = `https://github.com/NitoNetwork/nito-web-wallet/relea
 
 function NitoBrand() {
   return (
-    <div className="group/brand flex items-center gap-3">
+    <div className="group/brand flex min-w-0 items-center gap-3 sm:gap-4">
       <Image
         alt="Nito"
-        className="size-11 rounded-2xl border border-sky-200/[0.12] bg-[#030916] object-contain p-2 transition-transform duration-300 group-hover/brand:-rotate-3 group-hover/brand:scale-105 motion-reduce:transition-none"
-        height={40}
+        className="aurora-brand-logo size-12 shrink-0 object-contain transition-transform duration-500 group-hover/brand:-translate-y-0.5 group-hover/brand:scale-105 motion-reduce:transition-none sm:size-15"
+        height={60}
         preload
         src="/nito-256.png"
-        width={40}
+        width={60}
       />
-      <div>
-        <p className="text-[15px] font-black leading-none tracking-[0.2em] text-white">
+      <div className="min-w-0 sm:flex sm:items-baseline sm:gap-3">
+        <p className="truncate text-[15px] font-black leading-none tracking-[0.2em] text-white sm:text-xl">
           NITO
         </p>
-        <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <p className="mt-1.5 hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 min-[390px]:block sm:mt-0 sm:text-sm">
           Web Wallet
         </p>
       </div>
@@ -39,9 +39,9 @@ function WalletPage() {
   const { t } = useI18n();
 
   return (
-    <main className="wallet-canvas flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-sky-200/[0.08] bg-[#020712]/96">
-        <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <main className="wallet-canvas flex min-h-dvh flex-col text-foreground">
+      <header className="aurora-header top-0 z-50 border-b">
+        <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-3 px-4 sm:h-22 sm:px-6 lg:px-8">
           <NitoBrand />
           <div className="flex items-center gap-2">
             <WalletLanguageSelect id="header-wallet-language" />
@@ -58,8 +58,8 @@ function WalletPage() {
 
       <WalletAccessWorkspace />
 
-      <footer className="mt-auto border-t border-sky-200/[0.08] px-4 py-6 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2">
+      <footer className="aurora-footer mt-auto border-t px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-center gap-x-2">
           <a
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-center text-sm font-semibold text-slate-400 transition-colors hover:text-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             href="https://github.com/NitoNetwork/nito-web-wallet"

@@ -220,6 +220,19 @@ const networkTone = (state?: WalletNetworkState) => {
   return 'border-sky-300/25 bg-sky-300/10 text-sky-100';
 };
 
+const networkTextTone = (state?: WalletNetworkState) => {
+  if (
+    state?.record?.status === 'fresh' &&
+    (state.status === 'ready' || state.status === 'scanning')
+  ) {
+    return 'text-emerald-300';
+  }
+  if (state?.status === 'stale' || state?.status === 'error') {
+    return 'text-amber-200';
+  }
+  return 'text-sky-200';
+};
+
 const networkLabel = (state: WalletNetworkState | undefined, t: Translator) => {
   if (!state || state.status === 'idle') return t('network.initializing');
   if (state.status === 'connecting') return t('network.connecting');
@@ -1442,7 +1455,7 @@ export function WalletDashboard({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="aurora-dashboard">
       {manualSyncCooldownOpen ? (
         <ManualSyncCooldownDialog
           onClose={() => setManualSyncCooldownOpen(false)}
@@ -1468,1082 +1481,1048 @@ export function WalletDashboard({
           receipt={broadcastReceipt}
         />
       ) : null}
-      <div className="glass-panel subtle-shine flex items-center justify-between gap-3 rounded-3xl p-3.5 sm:p-4">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.07] text-emerald-200">
-            <ShieldCheck className="size-4" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-sm font-black tracking-tight text-white">
-              {t(sourceLabelKey(summary))}
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              {t('app.connectionEstablished')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className={`hidden sm:inline-flex ${networkTone(network)}`}
-          >
-            {networkLabel(network, t)}
-          </Badge>
-          <Button
-            aria-label={t('wallet.refresh')}
-            variant="ghost"
-            size="icon"
-            onClick={() => void runManualWalletSync()}
-          >
-            <RefreshCw />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => void onLock()}>
-            <LockKeyhole data-icon="inline-start" />
-            {t('wallet.exit')}
-          </Button>
-        </div>
-      </div>
-
-      <nav
-        aria-label={t('nav.aria')}
-        className="grid gap-1 rounded-3xl border border-sky-200/[0.10] bg-[#061120] p-1.5 sm:gap-1.5"
-        style={{
-          gridTemplateColumns: `repeat(${navigation.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {navigation.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            aria-label={label}
-            aria-current={activeView === key ? 'page' : undefined}
-            onClick={() => setActiveView(key)}
-            className={`group/nav flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-0.5 py-2 text-[9px] font-bold tracking-tight outline-none transition-all duration-200 min-[375px]:text-[10px] sm:text-xs lg:min-h-12 lg:flex-row lg:gap-2 lg:px-2 ${activeView === key ? 'border-sky-300/20 bg-[#1769c2] text-white' : 'border-transparent text-slate-500 hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-slate-200 focus-visible:ring-4 focus-visible:ring-sky-300/10'}`}
-          >
-            <Icon
-              className="size-4 shrink-0 transition-transform duration-200 group-hover/nav:scale-110"
-              aria-hidden="true"
-            />
-            <span className="max-w-full hyphens-auto text-center leading-tight [overflow-wrap:anywhere]">
-              {label}
-            </span>
-          </button>
-        ))}
-      </nav>
-
-      {localError || network?.errorCode ? (
-        <div
-          role="alert"
-          className="flex gap-3 rounded-xl border border-red-300/25 bg-red-300/[0.06] p-3 text-sm text-red-100"
-        >
-          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          {localError ?? translateNetworkError(network?.errorCode, t)}
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="flex gap-3 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.045] p-3 text-sm text-emerald-100">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          {notice}
-        </div>
-      ) : null}
-      {activeView === 'settings' ? (
-        <Card className="glass-panel border-white/[0.08] bg-transparent py-0">
-          <CardHeader className="px-5 pt-5">
-            <CardTitle className="text-base text-white">
-              {t('settings.session')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <div className="divide-y divide-white/[0.06] text-sm">
-              <div className="flex flex-col items-stretch gap-2 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <label className="text-slate-500" htmlFor="auto-lock-minutes">
-                  {t('settings.lock')}
-                </label>
-                <select
-                  id="auto-lock-minutes"
-                  aria-label={t('settings.lock')}
-                  className="min-h-10 w-full rounded-xl border border-white/10 bg-[#050d1a] px-3 text-sm font-semibold text-slate-100 outline-none transition hover:border-sky-200/20 focus:border-sky-300/50 focus:ring-4 focus:ring-sky-300/10 sm:w-auto"
-                  value={autoLockMinutes}
-                  onChange={(event) => {
-                    const minutes = Number(event.currentTarget.value);
-                    if (isAutoLockMinutes(minutes)) {
-                      onAutoLockMinutesChange(minutes);
-                    }
-                  }}
-                >
-                  {AUTO_LOCK_MINUTE_OPTIONS.map((minutes) => (
-                    <option key={minutes} value={minutes}>
-                      {minutes === 0
-                        ? t('settings.never')
-                        : t('settings.minutes', { minutes })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <label
-                  className="text-slate-500"
-                  htmlFor="background-lock-seconds"
-                >
-                  {t('settings.backgroundLock')}
-                </label>
-                <select
-                  id="background-lock-seconds"
-                  aria-label={t('settings.backgroundLock')}
-                  className="min-h-10 w-full rounded-xl border border-white/10 bg-[#050d1a] px-3 text-sm font-semibold text-slate-100 outline-none transition hover:border-sky-200/20 focus:border-sky-300/50 focus:ring-4 focus:ring-sky-300/10 sm:w-auto"
-                  value={backgroundLockSeconds}
-                  onChange={(event) => {
-                    const seconds = Number(event.currentTarget.value);
-                    if (isBackgroundLockSeconds(seconds)) {
-                      onBackgroundLockSecondsChange(seconds);
-                    }
-                  }}
-                >
-                  {BACKGROUND_LOCK_SECOND_OPTIONS.map((seconds) => (
-                    <option key={seconds} value={seconds}>
-                      {seconds === 0
-                        ? t('settings.never')
-                        : t('settings.seconds', { seconds })}
-                    </option>
-                  ))}
-                </select>
+      <div className="aurora-dashboard-grid">
+        <aside className="aurora-sidebar">
+          <div className="aurora-session-card glass-panel subtle-shine flex items-center justify-between gap-3 rounded-3xl p-3.5 sm:p-4">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.07] text-emerald-200">
+                <ShieldCheck className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-black tracking-tight text-white">
+                  {t(sourceLabelKey(summary))}
+                </p>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  {t('app.connectionEstablished')}
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ) : null}
-      {activeView === 'settings' &&
-      offersRecoveryPhraseInSettings(summary.source) ? (
-        <Card className="overflow-visible border border-amber-300/15 bg-amber-300/[0.025] py-0">
-          <CardHeader className="px-5 pt-5">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-200">
-                {t('backup.label')}
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <CardTitle className="text-base text-white">
-                  {t('backup.recoveryPhrase', {
-                    count: summary.wordCount ?? 24,
-                  })}
-                </CardTitle>
-                <InfoTip label={t('backup.infoLabel')}>
-                  {t('backup.compatibility')}
-                </InfoTip>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-5 pb-5">
-            {!revealedMnemonic &&
-            summary.source === 'email-credentials' &&
-            !backupRevealRequested ? (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setBackupRevealRequested(true);
-                    setBackupError(undefined);
-                  }}
-                >
-                  <Eye data-icon="inline-start" />
-                  {t('backup.showPhrase')}
-                </Button>
-              </div>
-            ) : !revealedMnemonic && summary.source === 'email-credentials' ? (
-              <LocalizedForm
-                className="rounded-2xl border border-amber-300/15 bg-slate-950/55 p-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void revealRecoveryPhrase();
-                }}
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="outline"
+                className={`hidden sm:inline-flex ${networkTone(network)}`}
               >
-                <label className="text-xs font-semibold text-slate-300">
-                  {t('backup.confirmPassword')}
-                  <span className="relative mt-2 block">
-                    <input
-                      autoComplete="current-password"
-                      className={`${INPUT_CLASS} mt-0 pr-12`}
-                      name="backupPassword"
-                      placeholder={t('backup.passwordPlaceholder')}
-                      type={backupPasswordVisible ? 'text' : 'password'}
-                      value={backupPassword}
-                      onChange={(event) => {
-                        setBackupPassword(event.currentTarget.value);
-                        setBackupError(undefined);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      aria-label={t(
-                        backupPasswordVisible
-                          ? 'common.hideField'
-                          : 'common.showField',
-                        { label: t('access.passwordLabel') },
-                      )}
-                      aria-pressed={backupPasswordVisible}
-                      className="absolute inset-y-0 right-1 grid w-10 place-items-center rounded-lg text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200"
-                      onClick={() =>
-                        setBackupPasswordVisible((visible) => !visible)
-                      }
-                    >
-                      {backupPasswordVisible ? (
-                        <EyeOff className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </button>
-                  </span>
-                </label>
-                <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                  <Button
-                    disabled={backupBusy}
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setBackupRevealRequested(false);
-                      setBackupPassword('');
-                      setBackupPasswordVisible(false);
-                      setBackupError(undefined);
-                    }}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    disabled={backupBusy || backupPassword.length === 0}
-                    type="submit"
-                  >
-                    {backupBusy ? (
-                      <LoaderCircle
-                        className="animate-spin"
-                        data-icon="inline-start"
-                      />
-                    ) : (
-                      <Eye data-icon="inline-start" />
-                    )}
-                    {t('backup.verifyShow')}
-                  </Button>
-                </div>
-              </LocalizedForm>
-            ) : !revealedMnemonic ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-slate-500">
-                  {t('backup.explicitReveal')}
-                </p>
-                <Button
-                  disabled={backupBusy}
-                  type="button"
-                  variant="outline"
-                  onClick={() => void revealRecoveryPhrase()}
-                >
-                  {backupBusy ? (
-                    <LoaderCircle
-                      className="animate-spin"
-                      data-icon="inline-start"
-                    />
-                  ) : (
-                    <Eye data-icon="inline-start" />
-                  )}
-                  {t('backup.revealLocal')}
-                </Button>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-amber-300/20 bg-slate-950/65 p-4">
-                <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                  {revealedMnemonic.mnemonic.split(' ').map((word, index) => (
-                    <li
-                      key={`${index}-${word}`}
-                      className="rounded-lg border border-white/8 bg-slate-950/75 px-3 py-2 font-mono text-sm text-slate-100"
-                    >
-                      <span className="mr-2 text-[10px] text-slate-600">
-                        {index + 1}
-                      </span>
-                      {word}
-                    </li>
-                  ))}
-                </ol>
-                <RecoveryPhraseCopy
-                  description={t('backup.autoHide')}
-                  mnemonic={revealedMnemonic.mnemonic}
-                  secondaryAction={
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={hideRecoveryPhrase}
-                    >
-                      <EyeOff data-icon="inline-start" />
-                      {t('common.hide')}
-                    </Button>
-                  }
+                {networkLabel(network, t)}
+              </Badge>
+              <Button
+                aria-label={t('wallet.refresh')}
+                variant="ghost"
+                size="icon"
+                onClick={() => void runManualWalletSync()}
+              >
+                <RefreshCw />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => void onLock()}>
+                <LockKeyhole data-icon="inline-start" />
+                {t('wallet.exit')}
+              </Button>
+            </div>
+          </div>
+
+          <nav
+            aria-label={t('nav.aria')}
+            className="aurora-nav grid gap-1 rounded-3xl p-1.5 sm:gap-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${navigation.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {navigation.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                aria-label={label}
+                aria-current={activeView === key ? 'page' : undefined}
+                onClick={() => setActiveView(key)}
+                className={`aurora-nav-item group/nav flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-0.5 py-2 text-[9px] font-bold tracking-tight outline-none transition-all duration-200 min-[375px]:text-[10px] sm:text-xs ${activeView === key ? 'border-sky-200/35 bg-gradient-to-r from-[#075fc9] via-[#0a82ee] to-[#075fc9] text-white shadow-[0_10px_30px_rgba(0,111,255,0.24),inset_0_1px_rgba(255,255,255,0.14)]' : 'border-transparent text-slate-400 hover:-translate-y-0.5 hover:border-sky-200/15 hover:bg-white/[0.045] hover:text-slate-100 focus-visible:ring-4 focus-visible:ring-sky-300/15'}`}
+              >
+                <Icon
+                  className="size-4 shrink-0 transition-transform duration-200 group-hover/nav:scale-110"
+                  aria-hidden="true"
                 />
-              </div>
-            )}
-            {backupError ? (
-              <p role="alert" className="mt-3 text-xs leading-5 text-red-200">
-                {backupError}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+                <span className="max-w-full hyphens-auto text-center leading-tight [overflow-wrap:anywhere]">
+                  {label}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-      {activeView === 'home' ? (
-        <div className="grid gap-5">
-          <Card className="glass-panel subtle-shine relative border-sky-300/15 bg-transparent py-0">
-            <CardContent className="relative p-7 sm:p-10">
-              <div className="text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                  {t('home.totalBalance')}
-                </p>
-                <WalletBalance satoshis={snapshot.balanceSats} />
-                {snapshot.spendableSats !== snapshot.balanceSats ? (
-                  <p className="mt-3 text-xs text-slate-500">
-                    {t('home.spendable', {
-                      amount: formatNitoAmount(snapshot.spendableSats),
-                    })}
+        <div className="aurora-view-stack space-y-5">
+          {localError || network?.errorCode ? (
+            <div
+              role="alert"
+              className="flex gap-3 rounded-xl border border-red-300/25 bg-red-300/[0.06] p-3 text-sm text-red-100"
+            >
+              <CircleAlert
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              {localError ?? translateNetworkError(network?.errorCode, t)}
+            </div>
+          ) : null}
+          {notice ? (
+            <div className="flex gap-3 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.045] p-3 text-sm text-emerald-100">
+              <ShieldCheck
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              {notice}
+            </div>
+          ) : null}
+          {activeView === 'settings' ? (
+            <Card className="glass-panel border-white/[0.08] bg-transparent py-0">
+              <CardHeader className="px-5 pt-5">
+                <CardTitle className="text-base text-white">
+                  {t('settings.session')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                <div className="divide-y divide-white/[0.06] text-sm">
+                  <div className="flex flex-col items-stretch gap-2 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <label
+                      className="text-slate-500"
+                      htmlFor="auto-lock-minutes"
+                    >
+                      {t('settings.lock')}
+                    </label>
+                    <select
+                      id="auto-lock-minutes"
+                      aria-label={t('settings.lock')}
+                      className="min-h-10 w-full rounded-xl border border-white/10 bg-[#050d1a] px-3 text-sm font-semibold text-slate-100 outline-none transition hover:border-sky-200/20 focus:border-sky-300/50 focus:ring-4 focus:ring-sky-300/10 sm:w-auto"
+                      value={autoLockMinutes}
+                      onChange={(event) => {
+                        const minutes = Number(event.currentTarget.value);
+                        if (isAutoLockMinutes(minutes)) {
+                          onAutoLockMinutesChange(minutes);
+                        }
+                      }}
+                    >
+                      {AUTO_LOCK_MINUTE_OPTIONS.map((minutes) => (
+                        <option key={minutes} value={minutes}>
+                          {minutes === 0
+                            ? t('settings.never')
+                            : t('settings.minutes', { minutes })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <label
+                      className="text-slate-500"
+                      htmlFor="background-lock-seconds"
+                    >
+                      {t('settings.backgroundLock')}
+                    </label>
+                    <select
+                      id="background-lock-seconds"
+                      aria-label={t('settings.backgroundLock')}
+                      className="min-h-10 w-full rounded-xl border border-white/10 bg-[#050d1a] px-3 text-sm font-semibold text-slate-100 outline-none transition hover:border-sky-200/20 focus:border-sky-300/50 focus:ring-4 focus:ring-sky-300/10 sm:w-auto"
+                      value={backgroundLockSeconds}
+                      onChange={(event) => {
+                        const seconds = Number(event.currentTarget.value);
+                        if (isBackgroundLockSeconds(seconds)) {
+                          onBackgroundLockSecondsChange(seconds);
+                        }
+                      }}
+                    >
+                      {BACKGROUND_LOCK_SECOND_OPTIONS.map((seconds) => (
+                        <option key={seconds} value={seconds}>
+                          {seconds === 0
+                            ? t('settings.never')
+                            : t('settings.seconds', { seconds })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+          {activeView === 'settings' &&
+          offersRecoveryPhraseInSettings(summary.source) ? (
+            <Card className="overflow-visible border border-amber-300/15 bg-amber-300/[0.025] py-0">
+              <CardHeader className="px-5 pt-5">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-200">
+                    {t('backup.label')}
                   </p>
-                ) : null}
-                {snapshot.unconfirmedSats > 0 ? (
-                  <p className="mt-2 text-xs font-semibold text-amber-200">
-                    {t('home.pending', {
-                      amount: formatNitoAmount(snapshot.unconfirmedSats),
-                    })}
-                  </p>
-                ) : null}
-                {(snapshot.immatureCoinbaseSats ?? 0) > 0 ? (
-                  <p className="mt-2 text-xs font-semibold text-amber-200">
-                    {t('home.immature', {
-                      amount: formatNitoAmount(
-                        snapshot.immatureCoinbaseSats ?? 0,
-                      ),
-                    })}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="mx-auto mt-7 flex max-w-md flex-wrap justify-center gap-3">
-                {receiveAvailable ? (
-                  <Button
-                    className="min-w-32"
-                    size="lg"
-                    type="button"
-                    onClick={() => setActiveView('receive')}
-                  >
-                    <ArrowDownToLine data-icon="inline-start" />
-                    {t('nav.receive')}
-                  </Button>
-                ) : null}
-                <Button
-                  className="min-w-32"
-                  size="lg"
-                  type="button"
-                  variant="outline"
-                  onClick={() => setActiveView('send')}
-                >
-                  <ArrowUpRight data-icon="inline-start" />
-                  {t('nav.send')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {spendableUtxoCount >= 21 ? (
-            <Card className="glass-panel overflow-visible border-violet-300/15 bg-transparent py-0">
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <CardTitle className="text-base text-white">
-                      {t('consolidation.title')}
+                      {t('backup.recoveryPhrase', {
+                        count: summary.wordCount ?? 24,
+                      })}
                     </CardTitle>
-                    <InfoTip label={t('consolidation.infoLabel')}>
-                      {t('consolidation.body')}
+                    <InfoTip label={t('backup.infoLabel')}>
+                      {t('backup.compatibility')}
                     </InfoTip>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="border-white/10 text-slate-500"
-                  >
-                    {t('consolidation.spendable', {
-                      count: spendableUtxoCount,
-                    })}
-                  </Badge>
                 </div>
-                {!consolidationPreview ? (
-                  <Button
-                    className="mt-4"
-                    disabled={sendBusy || network?.status !== 'ready'}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void previewConsolidation()}
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                {!revealedMnemonic &&
+                summary.source === 'email-credentials' &&
+                !backupRevealRequested ? (
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setBackupRevealRequested(true);
+                        setBackupError(undefined);
+                      }}
+                    >
+                      <Eye data-icon="inline-start" />
+                      {t('backup.showPhrase')}
+                    </Button>
+                  </div>
+                ) : !revealedMnemonic &&
+                  summary.source === 'email-credentials' ? (
+                  <LocalizedForm
+                    className="rounded-2xl border border-amber-300/15 bg-slate-950/55 p-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void revealRecoveryPhrase();
+                    }}
                   >
-                    {sendBusy ? (
-                      <LoaderCircle
-                        className="animate-spin"
-                        data-icon="inline-start"
-                      />
-                    ) : (
-                      <Database data-icon="inline-start" />
-                    )}
-                    {t('consolidation.calculate')}
-                  </Button>
-                ) : (
-                  <div className="mt-4 rounded-xl border border-violet-300/20 bg-violet-300/[0.035] p-4">
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <SendMetric
-                        label={t('consolidation.metricTransactions')}
-                        value={String(
-                          consolidationPreview.plan.transactions.length,
-                        )}
-                      />
-                      <SendMetric
-                        label={t('consolidation.metricInputs')}
-                        value={String(consolidationPreview.plan.inputCount)}
-                      />
-                      <SendMetric
-                        label={t('consolidation.metricOutputs')}
-                        value={String(consolidationPreview.plan.outputCount)}
-                      />
-                      <SendMetric
-                        label={t('consolidation.metricFees')}
-                        value={`${formatNitoAmount(consolidationPreview.plan.totalFeeSats)} NITO`}
-                      />
-                    </div>
-                    {!preparedConsolidation ? (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Button
-                          ref={consolidationSignButtonRef}
-                          disabled={sendBusy}
+                    <label className="text-xs font-semibold text-slate-300">
+                      {t('backup.confirmPassword')}
+                      <span className="relative mt-2 block">
+                        <input
+                          autoComplete="current-password"
+                          className={`${INPUT_CLASS} mt-0 pr-12`}
+                          name="backupPassword"
+                          placeholder={t('backup.passwordPlaceholder')}
+                          type={backupPasswordVisible ? 'text' : 'password'}
+                          value={backupPassword}
+                          onChange={(event) => {
+                            setBackupPassword(event.currentTarget.value);
+                            setBackupError(undefined);
+                          }}
+                        />
+                        <button
                           type="button"
-                          onClick={() => void signConsolidation()}
-                        >
-                          {sendBusy ? (
-                            <LoaderCircle
-                              className="animate-spin"
-                              data-icon="inline-start"
-                            />
-                          ) : (
-                            <ShieldCheck data-icon="inline-start" />
+                          aria-label={t(
+                            backupPasswordVisible
+                              ? 'common.hideField'
+                              : 'common.showField',
+                            { label: t('access.passwordLabel') },
                           )}
-                          {t('consolidation.sign')}
-                        </Button>
-                        <Button
-                          disabled={sendBusy}
-                          type="button"
-                          variant="outline"
-                          onClick={() => setConsolidationPreview(undefined)}
+                          aria-pressed={backupPasswordVisible}
+                          className="absolute inset-y-0 right-1 grid w-10 place-items-center rounded-lg text-slate-500 transition hover:bg-white/[0.05] hover:text-slate-200"
+                          onClick={() =>
+                            setBackupPasswordVisible((visible) => !visible)
+                          }
                         >
-                          {t('common.cancel')}
+                          {backupPasswordVisible ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </button>
+                      </span>
+                    </label>
+                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        disabled={backupBusy}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setBackupRevealRequested(false);
+                          setBackupPassword('');
+                          setBackupPasswordVisible(false);
+                          setBackupError(undefined);
+                        }}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        disabled={backupBusy || backupPassword.length === 0}
+                        type="submit"
+                      >
+                        {backupBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <Eye data-icon="inline-start" />
+                        )}
+                        {t('backup.verifyShow')}
+                      </Button>
+                    </div>
+                  </LocalizedForm>
+                ) : !revealedMnemonic ? (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs leading-5 text-slate-500">
+                      {t('backup.explicitReveal')}
+                    </p>
+                    <Button
+                      disabled={backupBusy}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void revealRecoveryPhrase()}
+                    >
+                      {backupBusy ? (
+                        <LoaderCircle
+                          className="animate-spin"
+                          data-icon="inline-start"
+                        />
+                      ) : (
+                        <Eye data-icon="inline-start" />
+                      )}
+                      {t('backup.revealLocal')}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-amber-300/20 bg-slate-950/65 p-4">
+                    <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                      {revealedMnemonic.mnemonic
+                        .split(' ')
+                        .map((word, index) => (
+                          <li
+                            key={`${index}-${word}`}
+                            className="rounded-lg border border-white/8 bg-slate-950/75 px-3 py-2 font-mono text-sm text-slate-100"
+                          >
+                            <span className="mr-2 text-[10px] text-slate-600">
+                              {index + 1}
+                            </span>
+                            {word}
+                          </li>
+                        ))}
+                    </ol>
+                    <RecoveryPhraseCopy
+                      description={t('backup.autoHide')}
+                      mnemonic={revealedMnemonic.mnemonic}
+                      secondaryAction={
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={hideRecoveryPhrase}
+                        >
+                          <EyeOff data-icon="inline-start" />
+                          {t('common.hide')}
                         </Button>
-                      </div>
-                    ) : (
-                      <div className="mt-4">
-                        <p className="text-xs leading-5 text-slate-500">
-                          {t('consolidation.progress', {
-                            current: broadcastedConsolidationTxids.length,
-                            total: preparedConsolidation.transactions.length,
-                          })}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Button
-                            ref={consolidationBroadcastButtonRef}
-                            disabled={
-                              sendBusy ||
-                              network?.status !== 'ready' ||
-                              broadcastedConsolidationTxids.length >=
-                                preparedConsolidation.transactions.length
-                            }
-                            type="button"
-                            onClick={() => void broadcastNextConsolidation()}
-                          >
-                            {sendBusy ? (
-                              <LoaderCircle
-                                className="animate-spin"
-                                data-icon="inline-start"
-                              />
-                            ) : (
-                              <ArrowUpRight data-icon="inline-start" />
-                            )}
-                            {t('consolidation.broadcastNext')}
-                          </Button>
-                          <Button
-                            disabled={
-                              sendBusy ||
-                              broadcastedConsolidationTxids.length > 0
-                            }
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setPreparedConsolidation(undefined);
-                              setConsolidationPreview(undefined);
-                            }}
-                          >
-                            {t('send.cancelBroadcast')}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                      }
+                    />
                   </div>
                 )}
-                {sendError ? (
-                  <div
-                    ref={sendErrorRef}
-                    className="mt-4 rounded-xl border border-red-300/20 bg-red-300/[0.05] p-3 text-sm leading-5 text-red-100"
+                {backupError ? (
+                  <p
                     role="alert"
+                    className="mt-3 text-xs leading-5 text-red-200"
                   >
-                    {sendError}
-                  </div>
+                    {backupError}
+                  </p>
                 ) : null}
               </CardContent>
             </Card>
           ) : null}
-        </div>
-      ) : null}
 
-      {activeView === 'utxos' ? (
-        <WalletUtxoList
-          utxos={snapshot.utxos}
-          addresses={snapshot.addresses}
-          blockHeight={network?.blockHeight ?? 0}
-        />
-      ) : null}
-
-      {activeView === 'receive' ? (
-        <div className="mx-auto w-full max-w-3xl">
-          <Card className="glass-panel border-sky-300/15 bg-transparent py-0">
-            <CardHeader className="px-5 pt-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-300">
-                    {t('receive.title')}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <CardTitle className="text-lg text-white">
-                      {t('receive.addresses')}
-                    </CardTitle>
-                    <InfoTip label={t('receive.infoLabel')}>
-                      {summary.hd ? (
-                        <>
-                          {t('receive.hdInfo')}
-                          {receivePath ? (
-                            <span className="mt-2 block font-mono text-[10px] text-slate-500">
-                              {t('receive.displayedPath', {
-                                path: receivePath,
-                                index:
-                                  receiveIndex === undefined
-                                    ? ''
-                                    : t('receive.indexSuffix', {
-                                        index: receiveIndex,
-                                      }),
-                              })}
-                            </span>
-                          ) : null}
-                        </>
-                      ) : (
-                        t('receive.singleKeyFormats')
-                      )}
-                    </InfoTip>
+          {activeView === 'home' ? (
+            <div className="grid gap-5">
+              <Card className="aurora-balance-hero aurora-card-glint glass-panel relative bg-transparent py-0">
+                <div className="aurora-hero-scene" aria-hidden="true">
+                  <Image
+                    alt=""
+                    className="aurora-hero-logo"
+                    height={270}
+                    src="/nito-256.png"
+                    width={270}
+                  />
+                  <span className="aurora-hero-horizon" />
+                </div>
+                <CardContent className="aurora-balance-content relative px-7 pb-7 sm:px-10 sm:pb-10">
+                  <div className="text-center">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-100/70">
+                      {t('home.totalBalance')}
+                    </p>
+                    <WalletBalance satoshis={snapshot.balanceSats} />
                   </div>
-                </div>
-                {familyFor(selectedFamily).preferred ? (
-                  <Badge className="bg-sky-200 text-slate-950">
-                    {t('receive.recommended')}
-                  </Badge>
-                ) : null}
-              </div>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              {summary.hd ? (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {HD_ACCOUNT_TEMPLATES.map((family) => (
-                    <button
-                      key={family.key}
-                      type="button"
-                      onClick={() => {
-                        addressOperationRef.current += 1;
-                        setIssuedAddress(undefined);
-                        setSelectedFamily(family.key);
-                        setLocalError(undefined);
-                      }}
-                      className={`group/family min-h-14 rounded-2xl border px-3 py-2 text-left text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 ${
-                        selectedFamily === family.key
-                          ? 'border-sky-300/40 bg-sky-300/12 text-sky-100'
-                          : 'border-white/8 bg-slate-950/45 text-slate-400 hover:border-white/15 hover:bg-white/[0.055] hover:text-slate-200'
-                      }`}
-                    >
-                      <span className="block font-bold">{family.label}</span>
-                      {family.preferred ? (
-                        <span className="mt-1 block text-[10px] font-semibold text-sky-300/75">
-                          {t('receive.recommended')}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-sky-300/20 bg-sky-300/[0.06] px-3 py-2 text-xs leading-5 text-sky-100">
-                  {t('receive.singleKeyInfo')}
-                </div>
-              )}
 
-              <div className="mt-5 min-h-28 rounded-3xl border border-white/8 bg-slate-950/60 p-4 sm:p-5">
-                {addressBusy ? (
-                  <div className="flex min-h-20 items-center justify-center gap-2 text-sm text-slate-400">
-                    <LoaderCircle className="size-4 animate-spin" />
-                    {t('receive.deriving')}
-                  </div>
-                ) : receiveAddress && receiveQr ? (
-                  <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-                    <div>
-                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
-                        {familyFor(selectedFamily).label}
-                        {receiveIndex !== undefined
-                          ? t('receive.indexSuffix', { index: receiveIndex })
-                          : null}
-                      </p>
-                      <p className="break-all font-mono text-sm leading-6 text-sky-100">
-                        {receiveAddress}
-                      </p>
-                    </div>
-                    <svg
-                      aria-labelledby="receive-address-qr-title"
-                      className="mx-auto size-40 rounded-2xl border border-white/15 bg-white p-2"
-                      shapeRendering="crispEdges"
-                      viewBox={`0 0 ${receiveQr.size} ${receiveQr.size}`}
-                    >
-                      <title id="receive-address-qr-title">
-                        {t('receive.qrTitle', { address: receiveAddress })}
-                      </title>
-                      <rect
-                        fill="#ffffff"
-                        height={receiveQr.size}
-                        width={receiveQr.size}
-                      />
-                      <path d={receiveQr.path} fill="#020617" />
-                    </svg>
-                  </div>
-                ) : (
-                  <p className="flex min-h-20 items-center justify-center text-sm text-slate-500">
-                    {t('receive.syncRequired')}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  disabled={!receiveAddress || addressBusy}
-                  onClick={() => void copyReceiveAddress()}
-                >
-                  <Copy data-icon="inline-start" />
-                  {t('common.copy')}
-                </Button>
-                {summary.hd ? (
-                  <Button
-                    variant="outline"
-                    disabled={
-                      !snapshot || addressBusy || network?.status !== 'ready'
-                    }
-                    onClick={() => void reserveNewAddress()}
-                  >
-                    {addressBusy ? (
-                      <LoaderCircle
-                        className="animate-spin"
-                        data-icon="inline-start"
-                      />
-                    ) : (
-                      <RefreshCw data-icon="inline-start" />
-                    )}
-                    {t('receive.newAddress', {
-                      family: familyFor(selectedFamily).label,
-                    })}
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
-      {activeView === 'settings' && summary.hd ? (
-        <Card className="border border-white/8 bg-card/65 py-0">
-          <details className="group/details">
-            <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-sky-300/10">
-              <div>
-                <CardTitle className="text-base text-white">
-                  {t('settings.scanDetails')}
-                </CardTitle>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t('settings.scanHint')}
-                </p>
-              </div>
-              <ChevronDown
-                className="size-4 text-slate-500 transition-transform duration-200 group-open/details:rotate-180"
-                aria-hidden="true"
-              />
-            </summary>
-            <CardContent className="border-t border-white/[0.06] px-5 pt-4 pb-5">
-              <p className="mb-4 text-xs leading-5 text-slate-500">
-                {t('settings.scanDescription')}
-              </p>
-              {summary.hd && coverage.length > 0 ? (
-                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                  {coverage.map((item) => (
-                    <div
-                      key={`${item.sequenceKey}:${item.branch}`}
-                      className="grid grid-cols-[1fr_auto] gap-3 rounded-xl border border-white/8 bg-slate-950/45 p-3"
-                    >
-                      <div>
-                        <p className="text-xs font-bold text-slate-200">
-                          {t('settings.accountCoverage', {
-                            account: item.account,
-                            family: familyFor(item.accountKey).label,
-                          })}
-                        </p>
-                        <p className="mt-1 text-[10px] text-slate-500">
-                          {item.branch === 'external'
-                            ? t('settings.externalBranch')
-                            : t('settings.internalBranch')}
-                        </p>
-                      </div>
-                      <div className="text-right font-mono text-[10px] text-slate-500">
-                        <p>
-                          {t('settings.scannedRange', {
-                            index: item.highestScannedIndex,
-                          })}
-                        </p>
-                        <p className="mt-1">
-                          {t('settings.lastUsed', {
-                            index: item.lastUsedIndex,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm leading-6 text-slate-500">
-                  {summary.hd
-                    ? t('settings.coveragePending')
-                    : t('settings.singleKeyNoGap')}
-                </p>
-              )}
-            </CardContent>
-          </details>
-        </Card>
-      ) : null}
-
-      {activeView === 'send' ? (
-        <Card className="glass-panel border-amber-300/15 bg-transparent py-0">
-          <CardHeader className="px-5 pt-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-200">
-                  {t('nav.send')}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <CardTitle className="text-lg text-white">
-                    {t('send.title')}
-                  </CardTitle>
-                  <InfoTip label={t('send.infoLabel')}>
-                    {t('send.infoBody')}
-                  </InfoTip>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.045] px-4 py-2.5 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-200/70">
-                  {t('send.spendableBalance')}
-                </p>
-                <p className="mt-1 font-mono text-sm font-bold text-emerald-100">
-                  {formatNitoAmount(snapshot.spendableSats)} NITO
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <LocalizedForm
-              className="space-y-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void previewSend();
-              }}
-            >
-              {recipients.map((recipient, index) => (
-                <div
-                  key={recipient.id}
-                  className="grid gap-3 rounded-2xl border border-white/8 bg-slate-950/45 p-3.5 lg:grid-cols-[minmax(0,1fr)_14rem_auto]"
-                >
-                  <label className="text-xs font-semibold text-slate-300">
-                    {t('send.recipient', { index: index + 1 })}
-                    <input
-                      className={INPUT_CLASS}
-                      value={recipient.address}
-                      ref={(element) => {
-                        if (element) {
-                          recipientAddressRefs.current[recipient.id] = element;
-                        } else {
-                          delete recipientAddressRefs.current[recipient.id];
-                        }
-                      }}
-                      spellCheck={false}
-                      autoComplete="off"
-                      placeholder={t('send.addressPlaceholder')}
-                      required
-                      onChange={(event) =>
-                        updateRecipient(
-                          recipient.id,
-                          'address',
-                          event.currentTarget.value,
-                        )
-                      }
-                    />
-                  </label>
-                  <label className="text-xs font-semibold text-slate-300">
-                    {t('send.amount')}
-                    <div className="relative">
-                      <input
-                        className={`${INPUT_CLASS} pr-16 font-mono`}
-                        value={recipient.amount}
-                        inputMode="decimal"
-                        placeholder={t('send.amountPlaceholder')}
-                        required
-                        onChange={(event) =>
-                          updateRecipient(
-                            recipient.id,
-                            'amount',
-                            event.currentTarget.value,
-                          )
-                        }
-                      />
-                      {shouldOfferMaxForRecipient(
-                        recipients,
-                        index,
-                        snapshot.spendableSats,
-                      ) ? (
-                        <button
-                          type="button"
-                          className="absolute right-2 top-1/2 mt-1 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-bold text-sky-200 hover:bg-sky-300/10 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={sendBusy || snapshot.spendableSats === 0}
-                          onClick={() => void applyMax(index)}
-                        >
-                          {t('send.max')}
-                        </button>
-                      ) : null}
-                    </div>
-                  </label>
-                  <div className="flex items-end justify-end">
+                  <div className="mx-auto mt-7 flex max-w-xl flex-wrap justify-center gap-3">
+                    {receiveAvailable ? (
+                      <Button
+                        className="min-w-36 sm:min-w-44"
+                        size="lg"
+                        type="button"
+                        onClick={() => setActiveView('receive')}
+                      >
+                        <ArrowDownToLine data-icon="inline-start" />
+                        {t('nav.receive')}
+                      </Button>
+                    ) : null}
                     <Button
-                      aria-label={t('send.removeRecipient', {
-                        index: index + 1,
-                      })}
-                      disabled={recipients.length === 1 || sendBusy}
-                      size="icon"
+                      className="min-w-36 sm:min-w-44"
+                      size="lg"
                       type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setRecipients((current) =>
-                          current.filter(
-                            (candidate) => candidate.id !== recipient.id,
-                          ),
-                        );
-                        invalidateSend();
-                      }}
+                      variant="outline"
+                      onClick={() => setActiveView('send')}
                     >
-                      <Trash2 aria-hidden="true" />
+                      <ArrowUpRight data-icon="inline-start" />
+                      {t('nav.send')}
                     </Button>
                   </div>
-                </div>
-              ))}
 
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                {recipients.length < MAX_SEND_RECIPIENTS ? (
-                  <Button
-                    disabled={sendBusy}
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const recipientId = nextRecipientIdRef.current;
-                      setRecipients((current) => [
-                        ...current,
-                        {
-                          id: recipientId,
-                          address: '',
-                          amount: '',
-                        },
-                      ]);
-                      nextRecipientIdRef.current = recipientId + 1;
-                      pendingRecipientFocusRef.current = recipientId;
-                      invalidateSend();
-                    }}
-                  >
-                    <Plus data-icon="inline-start" />
-                    {t('send.addRecipient')}
-                  </Button>
-                ) : (
-                  <span />
-                )}
-                <div className="w-full max-w-sm rounded-xl border border-white/8 bg-slate-950/35 px-3 py-2.5 text-xs sm:w-auto sm:min-w-72">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-slate-300">
-                        {t('send.networkFees')}
-                      </p>
-                      <p className="mt-1 text-slate-500">
-                        {customFeeEnabled
-                          ? `${feeRate || '—'} sats/vByte · ${t('send.customValue')}`
-                          : `${t('send.automatic')} · ${DEFAULT_FEE_PER_VBYTE.toString()} sats/vByte`}
+                  <div className="aurora-balance-stats">
+                    <div className="aurora-balance-stat">
+                      <p className="text-sm font-semibold text-slate-200">
+                        {t('home.spendable', {
+                          amount: formatNitoAmount(snapshot.spendableSats),
+                        })}
                       </p>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="border-emerald-300/20 text-emerald-200"
-                    >
-                      {customFeeEnabled ? t('send.expert') : t('send.auto')}
-                    </Badge>
+                    <div className="aurora-balance-stat">
+                      <p className="text-sm font-semibold text-slate-300">
+                        {t('home.pending', {
+                          amount: formatNitoAmount(snapshot.unconfirmedSats),
+                        })}
+                      </p>
+                    </div>
+                    {(snapshot.immatureCoinbaseSats ?? 0) > 0 ? (
+                      <div className="aurora-balance-stat">
+                        <p className="text-sm font-semibold text-amber-100">
+                          {t('home.immature', {
+                            amount: formatNitoAmount(
+                              snapshot.immatureCoinbaseSats ?? 0,
+                            ),
+                          })}
+                        </p>
+                      </div>
+                    ) : null}
+                    <div className="aurora-balance-stat">
+                      <output
+                        aria-live="polite"
+                        className={`text-sm font-bold ${networkTextTone(network)}`}
+                      >
+                        {networkLabel(network, t)}
+                      </output>
+                    </div>
                   </div>
-                  <details className="mt-2 border-t border-white/[0.06] pt-2">
-                    <summary className="cursor-pointer select-none font-semibold text-slate-500 hover:text-slate-300">
-                      {t('send.advanced')}
-                    </summary>
-                    <label className="mt-3 flex cursor-pointer items-start gap-2 text-slate-400">
-                      <input
-                        checked={customFeeEnabled}
-                        className="mt-0.5 size-4 accent-sky-400"
-                        type="checkbox"
-                        onChange={(event) => {
-                          setCustomFeeEnabled(event.currentTarget.checked);
-                          setFeeRate(DEFAULT_FEE_PER_VBYTE.toString());
-                          invalidateSend();
-                        }}
-                      />
-                      <span>
-                        {t('send.manual')}
-                        <span className="mt-1 block text-[10px] leading-4 text-amber-100/60">
-                          {t('send.manualWarning')}
-                        </span>
-                      </span>
-                    </label>
-                    {customFeeEnabled ? (
-                      <label className="mt-3 block font-semibold text-slate-300">
-                        {t('send.customFee')}
+                </CardContent>
+              </Card>
+
+              {spendableUtxoCount >= 21 ? (
+                <Card className="glass-panel overflow-visible border-violet-300/15 bg-transparent py-0">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base text-white">
+                          {t('consolidation.title')}
+                        </CardTitle>
+                        <InfoTip label={t('consolidation.infoLabel')}>
+                          {t('consolidation.body')}
+                        </InfoTip>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-white/10 text-slate-500"
+                      >
+                        {t('consolidation.spendable', {
+                          count: spendableUtxoCount,
+                        })}
+                      </Badge>
+                    </div>
+                    {!consolidationPreview ? (
+                      <Button
+                        className="mt-4"
+                        disabled={sendBusy || network?.status !== 'ready'}
+                        type="button"
+                        variant="outline"
+                        onClick={() => void previewConsolidation()}
+                      >
+                        {sendBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <Database data-icon="inline-start" />
+                        )}
+                        {t('consolidation.calculate')}
+                      </Button>
+                    ) : (
+                      <div className="mt-4 rounded-xl border border-violet-300/20 bg-violet-300/[0.035] p-4">
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                          <SendMetric
+                            label={t('consolidation.metricTransactions')}
+                            value={String(
+                              consolidationPreview.plan.transactions.length,
+                            )}
+                          />
+                          <SendMetric
+                            label={t('consolidation.metricInputs')}
+                            value={String(consolidationPreview.plan.inputCount)}
+                          />
+                          <SendMetric
+                            label={t('consolidation.metricOutputs')}
+                            value={String(
+                              consolidationPreview.plan.outputCount,
+                            )}
+                          />
+                          <SendMetric
+                            label={t('consolidation.metricFees')}
+                            value={`${formatNitoAmount(consolidationPreview.plan.totalFeeSats)} NITO`}
+                          />
+                        </div>
+                        {!preparedConsolidation ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Button
+                              ref={consolidationSignButtonRef}
+                              disabled={sendBusy}
+                              type="button"
+                              onClick={() => void signConsolidation()}
+                            >
+                              {sendBusy ? (
+                                <LoaderCircle
+                                  className="animate-spin"
+                                  data-icon="inline-start"
+                                />
+                              ) : (
+                                <ShieldCheck data-icon="inline-start" />
+                              )}
+                              {t('consolidation.sign')}
+                            </Button>
+                            <Button
+                              disabled={sendBusy}
+                              type="button"
+                              variant="outline"
+                              onClick={() => setConsolidationPreview(undefined)}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="mt-4">
+                            <p className="text-xs leading-5 text-slate-500">
+                              {t('consolidation.progress', {
+                                current: broadcastedConsolidationTxids.length,
+                                total:
+                                  preparedConsolidation.transactions.length,
+                              })}
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Button
+                                ref={consolidationBroadcastButtonRef}
+                                disabled={
+                                  sendBusy ||
+                                  network?.status !== 'ready' ||
+                                  broadcastedConsolidationTxids.length >=
+                                    preparedConsolidation.transactions.length
+                                }
+                                type="button"
+                                onClick={() =>
+                                  void broadcastNextConsolidation()
+                                }
+                              >
+                                {sendBusy ? (
+                                  <LoaderCircle
+                                    className="animate-spin"
+                                    data-icon="inline-start"
+                                  />
+                                ) : (
+                                  <ArrowUpRight data-icon="inline-start" />
+                                )}
+                                {t('consolidation.broadcastNext')}
+                              </Button>
+                              <Button
+                                disabled={
+                                  sendBusy ||
+                                  broadcastedConsolidationTxids.length > 0
+                                }
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  setPreparedConsolidation(undefined);
+                                  setConsolidationPreview(undefined);
+                                }}
+                              >
+                                {t('send.cancelBroadcast')}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {sendError ? (
+                      <div
+                        ref={sendErrorRef}
+                        className="mt-4 rounded-xl border border-red-300/20 bg-red-300/[0.05] p-3 text-sm leading-5 text-red-100"
+                        role="alert"
+                      >
+                        {sendError}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ) : null}
+            </div>
+          ) : null}
+
+          {activeView === 'utxos' ? (
+            <WalletUtxoList
+              utxos={snapshot.utxos}
+              addresses={snapshot.addresses}
+              blockHeight={network?.blockHeight ?? 0}
+            />
+          ) : null}
+
+          {activeView === 'receive' ? (
+            <div className="mx-auto w-full max-w-3xl">
+              <Card className="glass-panel border-sky-300/15 bg-transparent py-0">
+                <CardHeader className="px-5 pt-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-300">
+                        {t('receive.title')}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <CardTitle className="text-lg text-white">
+                          {t('receive.addresses')}
+                        </CardTitle>
+                        <InfoTip label={t('receive.infoLabel')}>
+                          {summary.hd ? (
+                            <>
+                              {t('receive.hdInfo')}
+                              {receivePath ? (
+                                <span className="mt-2 block font-mono text-[10px] text-slate-500">
+                                  {t('receive.displayedPath', {
+                                    path: receivePath,
+                                    index:
+                                      receiveIndex === undefined
+                                        ? ''
+                                        : t('receive.indexSuffix', {
+                                            index: receiveIndex,
+                                          }),
+                                  })}
+                                </span>
+                              ) : null}
+                            </>
+                          ) : (
+                            t('receive.singleKeyFormats')
+                          )}
+                        </InfoTip>
+                      </div>
+                    </div>
+                    {familyFor(selectedFamily).preferred ? (
+                      <Badge className="bg-sky-200 text-slate-950">
+                        {t('receive.recommended')}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  {summary.hd ? (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {HD_ACCOUNT_TEMPLATES.map((family) => (
+                        <button
+                          key={family.key}
+                          type="button"
+                          onClick={() => {
+                            addressOperationRef.current += 1;
+                            setIssuedAddress(undefined);
+                            setSelectedFamily(family.key);
+                            setLocalError(undefined);
+                          }}
+                          className={`group/family min-h-14 rounded-2xl border px-3 py-2 text-left text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 ${
+                            selectedFamily === family.key
+                              ? 'border-sky-300/40 bg-sky-300/12 text-sky-100'
+                              : 'border-white/8 bg-slate-950/45 text-slate-400 hover:border-white/15 hover:bg-white/[0.055] hover:text-slate-200'
+                          }`}
+                        >
+                          <span className="block font-bold">
+                            {family.label}
+                          </span>
+                          {family.preferred ? (
+                            <span className="mt-1 block text-[10px] font-semibold text-sky-300/75">
+                              {t('receive.recommended')}
+                            </span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-sky-300/20 bg-sky-300/[0.06] px-3 py-2 text-xs leading-5 text-sky-100">
+                      {t('receive.singleKeyInfo')}
+                    </div>
+                  )}
+
+                  <div className="mt-5 min-h-28 rounded-3xl border border-white/8 bg-slate-950/60 p-4 sm:p-5">
+                    {addressBusy ? (
+                      <div className="flex min-h-20 items-center justify-center gap-2 text-sm text-slate-400">
+                        <LoaderCircle className="size-4 animate-spin" />
+                        {t('receive.deriving')}
+                      </div>
+                    ) : receiveAddress && receiveQr ? (
+                      <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                        <div>
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                            {familyFor(selectedFamily).label}
+                            {receiveIndex !== undefined
+                              ? t('receive.indexSuffix', {
+                                  index: receiveIndex,
+                                })
+                              : null}
+                          </p>
+                          <p className="break-all font-mono text-sm leading-6 text-sky-100">
+                            {receiveAddress}
+                          </p>
+                        </div>
+                        <svg
+                          aria-labelledby="receive-address-qr-title"
+                          className="mx-auto size-40 rounded-2xl border border-white/15 bg-white p-2"
+                          shapeRendering="crispEdges"
+                          viewBox={`0 0 ${receiveQr.size} ${receiveQr.size}`}
+                        >
+                          <title id="receive-address-qr-title">
+                            {t('receive.qrTitle', { address: receiveAddress })}
+                          </title>
+                          <rect
+                            fill="#ffffff"
+                            height={receiveQr.size}
+                            width={receiveQr.size}
+                          />
+                          <path d={receiveQr.path} fill="#020617" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <p className="flex min-h-20 items-center justify-center text-sm text-slate-500">
+                        {t('receive.syncRequired')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      disabled={!receiveAddress || addressBusy}
+                      onClick={() => void copyReceiveAddress()}
+                    >
+                      <Copy data-icon="inline-start" />
+                      {t('common.copy')}
+                    </Button>
+                    {summary.hd ? (
+                      <Button
+                        variant="outline"
+                        disabled={
+                          !snapshot ||
+                          addressBusy ||
+                          network?.status !== 'ready'
+                        }
+                        onClick={() => void reserveNewAddress()}
+                      >
+                        {addressBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <RefreshCw data-icon="inline-start" />
+                        )}
+                        {t('receive.newAddress', {
+                          family: familyFor(selectedFamily).label,
+                        })}
+                      </Button>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
+
+          {activeView === 'settings' && summary.hd ? (
+            <Card className="border border-white/8 bg-card/65 py-0">
+              <details className="group/details">
+                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-sky-300/10">
+                  <div>
+                    <CardTitle className="text-base text-white">
+                      {t('settings.scanDetails')}
+                    </CardTitle>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {t('settings.scanHint')}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    className="size-4 text-slate-500 transition-transform duration-200 group-open/details:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <CardContent className="border-t border-white/[0.06] px-5 pt-4 pb-5">
+                  <p className="mb-4 text-xs leading-5 text-slate-500">
+                    {t('settings.scanDescription')}
+                  </p>
+                  {summary.hd && coverage.length > 0 ? (
+                    <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                      {coverage.map((item) => (
+                        <div
+                          key={`${item.sequenceKey}:${item.branch}`}
+                          className="grid grid-cols-[1fr_auto] gap-3 rounded-xl border border-white/8 bg-slate-950/45 p-3"
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-slate-200">
+                              {t('settings.accountCoverage', {
+                                account: item.account,
+                                family: familyFor(item.accountKey).label,
+                              })}
+                            </p>
+                            <p className="mt-1 text-[10px] text-slate-500">
+                              {item.branch === 'external'
+                                ? t('settings.externalBranch')
+                                : t('settings.internalBranch')}
+                            </p>
+                          </div>
+                          <div className="text-right font-mono text-[10px] text-slate-500">
+                            <p>
+                              {t('settings.scannedRange', {
+                                index: item.highestScannedIndex,
+                              })}
+                            </p>
+                            <p className="mt-1">
+                              {t('settings.lastUsed', {
+                                index: item.lastUsedIndex,
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-6 text-slate-500">
+                      {summary.hd
+                        ? t('settings.coveragePending')
+                        : t('settings.singleKeyNoGap')}
+                    </p>
+                  )}
+                </CardContent>
+              </details>
+            </Card>
+          ) : null}
+
+          {activeView === 'send' ? (
+            <Card className="glass-panel border-amber-300/15 bg-transparent py-0">
+              <CardHeader className="px-5 pt-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-200">
+                      {t('nav.send')}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <CardTitle className="text-lg text-white">
+                        {t('send.title')}
+                      </CardTitle>
+                      <InfoTip label={t('send.infoLabel')}>
+                        {t('send.infoBody')}
+                      </InfoTip>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.045] px-4 py-2.5 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-200/70">
+                      {t('send.spendableBalance')}
+                    </p>
+                    <p className="mt-1 font-mono text-sm font-bold text-emerald-100">
+                      {formatNitoAmount(snapshot.spendableSats)} NITO
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                <LocalizedForm
+                  className="space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void previewSend();
+                  }}
+                >
+                  {recipients.map((recipient, index) => (
+                    <div
+                      key={recipient.id}
+                      className="grid gap-3 rounded-2xl border border-white/8 bg-slate-950/45 p-3.5 lg:grid-cols-[minmax(0,1fr)_14rem_auto]"
+                    >
+                      <label className="text-xs font-semibold text-slate-300">
+                        {t('send.recipient', { index: index + 1 })}
                         <input
                           className={INPUT_CLASS}
-                          value={feeRate}
-                          inputMode="numeric"
-                          min="1"
-                          max="10000"
-                          placeholder={t('send.feePlaceholder')}
-                          type="number"
-                          required
-                          onChange={(event) => {
-                            setFeeRate(event.currentTarget.value);
-                            invalidateSend();
+                          value={recipient.address}
+                          ref={(element) => {
+                            if (element) {
+                              recipientAddressRefs.current[recipient.id] =
+                                element;
+                            } else {
+                              delete recipientAddressRefs.current[recipient.id];
+                            }
                           }}
+                          spellCheck={false}
+                          autoComplete="off"
+                          placeholder={t('send.addressPlaceholder')}
+                          required
+                          onChange={(event) =>
+                            updateRecipient(
+                              recipient.id,
+                              'address',
+                              event.currentTarget.value,
+                            )
+                          }
                         />
                       </label>
-                    ) : null}
-                  </details>
-                </div>
-              </div>
+                      <label className="text-xs font-semibold text-slate-300">
+                        {t('send.amount')}
+                        <div className="relative">
+                          <input
+                            className={`${INPUT_CLASS} pr-16 font-mono`}
+                            value={recipient.amount}
+                            inputMode="decimal"
+                            placeholder={t('send.amountPlaceholder')}
+                            required
+                            onChange={(event) =>
+                              updateRecipient(
+                                recipient.id,
+                                'amount',
+                                event.currentTarget.value,
+                              )
+                            }
+                          />
+                          {shouldOfferMaxForRecipient(
+                            recipients,
+                            index,
+                            snapshot.spendableSats,
+                          ) ? (
+                            <button
+                              type="button"
+                              className="absolute right-2 top-1/2 mt-1 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-bold text-sky-200 hover:bg-sky-300/10 disabled:cursor-not-allowed disabled:opacity-40"
+                              disabled={
+                                sendBusy || snapshot.spendableSats === 0
+                              }
+                              onClick={() => void applyMax(index)}
+                            >
+                              {t('send.max')}
+                            </button>
+                          ) : null}
+                        </div>
+                      </label>
+                      <div className="flex items-end justify-end">
+                        <Button
+                          aria-label={t('send.removeRecipient', {
+                            index: index + 1,
+                          })}
+                          disabled={recipients.length === 1 || sendBusy}
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setRecipients((current) =>
+                              current.filter(
+                                (candidate) => candidate.id !== recipient.id,
+                              ),
+                            );
+                            invalidateSend();
+                          }}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
 
-              <Button
-                ref={sendPreviewButtonRef}
-                disabled={
-                  sendBusy ||
-                  network?.status !== 'ready' ||
-                  !snapshot?.spendableSats
-                }
-                type="submit"
-              >
-                {sendBusy && !sendPreview ? (
-                  <LoaderCircle
-                    className="animate-spin"
-                    data-icon="inline-start"
-                  />
-                ) : (
-                  <ArrowUpRight data-icon="inline-start" />
-                )}
-                {t('send.preview')}
-              </Button>
-            </LocalizedForm>
-
-            {sendError ? (
-              <div
-                ref={sendErrorRef}
-                role="alert"
-                tabIndex={-1}
-                className="mt-4 rounded-xl border border-red-300/20 bg-red-300/[0.05] p-3 text-sm text-red-100"
-              >
-                {sendError}
-              </div>
-            ) : null}
-
-            {sendPreview ? (
-              <div className="mt-4 rounded-2xl border border-sky-300/20 bg-sky-300/[0.035] p-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <SendMetric
-                    label={t('send.metricRecipients')}
-                    value={String(sendPreview.outputs.length)}
-                  />
-                  <SendMetric
-                    label={t('send.metricAmount')}
-                    value={`${formatNitoAmount(sendPreview.estimate.amountSats)} NITO`}
-                  />
-                  <SendMetric
-                    label={t('send.metricFee')}
-                    value={`${formatNitoAmount(sendPreview.estimate.feeSats)} NITO`}
-                  />
-                  <SendMetric
-                    label={t('send.metricInputsOutputs', {
-                      inputs: sendPreview.estimate.inputCount,
-                      outputs: sendPreview.estimate.outputCount,
-                    })}
-                    value={`${sendPreview.estimate.inputCount} / ${sendPreview.estimate.outputCount}`}
-                  />
-                </div>
-                {!preparedSend ? (
-                  <Button
-                    ref={sendSignButtonRef}
-                    className="mt-4"
-                    disabled={sendBusy}
-                    type="button"
-                    onClick={() => void signSend()}
-                  >
-                    {sendBusy ? (
-                      <LoaderCircle
-                        className="animate-spin"
-                        data-icon="inline-start"
-                      />
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    {recipients.length < MAX_SEND_RECIPIENTS ? (
+                      <Button
+                        disabled={sendBusy}
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const recipientId = nextRecipientIdRef.current;
+                          setRecipients((current) => [
+                            ...current,
+                            {
+                              id: recipientId,
+                              address: '',
+                              amount: '',
+                            },
+                          ]);
+                          nextRecipientIdRef.current = recipientId + 1;
+                          pendingRecipientFocusRef.current = recipientId;
+                          invalidateSend();
+                        }}
+                      >
+                        <Plus data-icon="inline-start" />
+                        {t('send.addRecipient')}
+                      </Button>
                     ) : (
-                      <ShieldCheck data-icon="inline-start" />
+                      <span />
                     )}
-                    {t('send.signAfterReview')}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
+                    <div className="w-full max-w-sm rounded-xl border border-white/8 bg-slate-950/35 px-3 py-2.5 text-xs sm:w-auto sm:min-w-72">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-slate-300">
+                            {t('send.networkFees')}
+                          </p>
+                          <p className="mt-1 text-slate-500">
+                            {customFeeEnabled
+                              ? `${feeRate || '—'} sats/vByte · ${t('send.customValue')}`
+                              : `${t('send.automatic')} · ${DEFAULT_FEE_PER_VBYTE.toString()} sats/vByte`}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="border-emerald-300/20 text-emerald-200"
+                        >
+                          {customFeeEnabled ? t('send.expert') : t('send.auto')}
+                        </Badge>
+                      </div>
+                      <details className="mt-2 border-t border-white/[0.06] pt-2">
+                        <summary className="cursor-pointer select-none font-semibold text-slate-500 hover:text-slate-300">
+                          {t('send.advanced')}
+                        </summary>
+                        <label className="mt-3 flex cursor-pointer items-start gap-2 text-slate-400">
+                          <input
+                            checked={customFeeEnabled}
+                            className="mt-0.5 size-4 accent-sky-400"
+                            type="checkbox"
+                            onChange={(event) => {
+                              setCustomFeeEnabled(event.currentTarget.checked);
+                              setFeeRate(DEFAULT_FEE_PER_VBYTE.toString());
+                              invalidateSend();
+                            }}
+                          />
+                          <span>
+                            {t('send.manual')}
+                            <span className="mt-1 block text-[10px] leading-4 text-amber-100/60">
+                              {t('send.manualWarning')}
+                            </span>
+                          </span>
+                        </label>
+                        {customFeeEnabled ? (
+                          <label className="mt-3 block font-semibold text-slate-300">
+                            {t('send.customFee')}
+                            <input
+                              className={INPUT_CLASS}
+                              value={feeRate}
+                              inputMode="numeric"
+                              min="1"
+                              max="10000"
+                              placeholder={t('send.feePlaceholder')}
+                              type="number"
+                              required
+                              onChange={(event) => {
+                                setFeeRate(event.currentTarget.value);
+                                invalidateSend();
+                              }}
+                            />
+                          </label>
+                        ) : null}
+                      </details>
+                    </div>
+                  </div>
 
-            {preparedSend ? (
-              <div className="mt-4 rounded-2xl border border-emerald-300/25 bg-emerald-300/[0.04] p-4">
-                <p className="text-sm font-bold text-emerald-100">
-                  {t('send.signedTitle')}
-                </p>
-                <p className="mt-2 break-all font-mono text-xs text-slate-400">
-                  {preparedSend.txid}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {t('send.signedSummary', {
-                    inputs: preparedSend.inputCount,
-                    outputs: preparedSend.outputCount,
-                    fee: formatNitoAmount(preparedSend.feeSats),
-                  })}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
                   <Button
-                    ref={sendBroadcastButtonRef}
-                    disabled={sendBusy || network?.status !== 'ready'}
-                    type="button"
-                    onClick={() => void broadcastSend()}
+                    ref={sendPreviewButtonRef}
+                    disabled={
+                      sendBusy ||
+                      network?.status !== 'ready' ||
+                      !snapshot?.spendableSats
+                    }
+                    type="submit"
                   >
-                    {sendBusy ? (
+                    {sendBusy && !sendPreview ? (
                       <LoaderCircle
                         className="animate-spin"
                         data-icon="inline-start"
@@ -2551,144 +2530,238 @@ export function WalletDashboard({
                     ) : (
                       <ArrowUpRight data-icon="inline-start" />
                     )}
-                    {t('send.broadcastNow')}
-                  </Button>
-                  <Button
-                    disabled={sendBusy}
-                    type="button"
-                    variant="outline"
-                    onClick={cancelPreparedSend}
-                  >
-                    {t('send.cancelBroadcast')}
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {activeView === 'settings' && summary.hd ? (
-        <div className="grid gap-5 xl:grid-cols-2">
-          <Card className="border border-violet-300/15 bg-violet-300/[0.025] py-0">
-            <details className="group/search">
-              <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-violet-300/10">
-                <div className="flex items-center gap-2">
-                  <Search
-                    className="size-4 text-violet-200"
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <CardTitle className="text-base text-white">
-                      {t('settings.addressSearch')}
-                    </CardTitle>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {t('settings.addressSearchHint')}
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className="size-4 text-slate-500 transition-transform duration-200 group-open/search:rotate-180"
-                  aria-hidden="true"
-                />
-              </summary>
-              <CardContent className="border-t border-white/[0.06] px-5 pt-4 pb-5">
-                <p className="text-xs leading-5 text-slate-500">
-                  {t('settings.addressSearchBody')}
-                </p>
-                <LocalizedForm
-                  className="mt-4 grid gap-3 sm:grid-cols-2"
-                  onSubmit={recoverRange}
-                >
-                  <label className="text-xs font-semibold text-slate-300">
-                    {t('settings.account')}
-                    <select
-                      className={INPUT_CLASS}
-                      name="account"
-                      defaultValue="1"
-                    >
-                      <option value="0">{t('settings.accountStandard')}</option>
-                      <option value="1">{t('settings.accountOne')}</option>
-                    </select>
-                  </label>
-                  <label className="text-xs font-semibold text-slate-300">
-                    {t('settings.family')}
-                    <select
-                      className={INPUT_CLASS}
-                      name="accountKey"
-                      defaultValue="bech32"
-                    >
-                      {HD_ACCOUNT_TEMPLATES.map((family) => (
-                        <option key={family.key} value={family.key}>
-                          {family.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="text-xs font-semibold text-slate-300">
-                    {t('settings.branch')}
-                    <select
-                      className={INPUT_CLASS}
-                      name="branch"
-                      defaultValue="external"
-                    >
-                      <option value="external">
-                        {t('settings.externalBranch')}
-                      </option>
-                      <option value="internal">
-                        {t('settings.internalBranch')}
-                      </option>
-                    </select>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      {t('settings.from')}
-                      <input
-                        className={INPUT_CLASS}
-                        name="fromIndex"
-                        type="number"
-                        min="0"
-                        max="9999"
-                        defaultValue="20"
-                        placeholder={t('settings.fromPlaceholder')}
-                        required
-                      />
-                    </label>
-                    <label className="text-xs font-semibold text-slate-300">
-                      {t('settings.to')}
-                      <input
-                        className={INPUT_CLASS}
-                        name="toIndex"
-                        type="number"
-                        min="0"
-                        max="9999"
-                        defaultValue="39"
-                        placeholder={t('settings.toPlaceholder')}
-                        required
-                      />
-                    </label>
-                  </div>
-                  <Button
-                    className="sm:col-span-2"
-                    disabled={recoveryBusy || network?.status !== 'ready'}
-                    type="submit"
-                  >
-                    {recoveryBusy ? (
-                      <LoaderCircle
-                        className="animate-spin"
-                        data-icon="inline-start"
-                      />
-                    ) : (
-                      <Search data-icon="inline-start" />
-                    )}
-                    {t('settings.inspectSession')}
+                    {t('send.preview')}
                   </Button>
                 </LocalizedForm>
+
+                {sendError ? (
+                  <div
+                    ref={sendErrorRef}
+                    role="alert"
+                    tabIndex={-1}
+                    className="mt-4 rounded-xl border border-red-300/20 bg-red-300/[0.05] p-3 text-sm text-red-100"
+                  >
+                    {sendError}
+                  </div>
+                ) : null}
+
+                {sendPreview ? (
+                  <div className="mt-4 rounded-2xl border border-sky-300/20 bg-sky-300/[0.035] p-4">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <SendMetric
+                        label={t('send.metricRecipients')}
+                        value={String(sendPreview.outputs.length)}
+                      />
+                      <SendMetric
+                        label={t('send.metricAmount')}
+                        value={`${formatNitoAmount(sendPreview.estimate.amountSats)} NITO`}
+                      />
+                      <SendMetric
+                        label={t('send.metricFee')}
+                        value={`${formatNitoAmount(sendPreview.estimate.feeSats)} NITO`}
+                      />
+                      <SendMetric
+                        label={t('send.metricInputsOutputs', {
+                          inputs: sendPreview.estimate.inputCount,
+                          outputs: sendPreview.estimate.outputCount,
+                        })}
+                        value={`${sendPreview.estimate.inputCount} / ${sendPreview.estimate.outputCount}`}
+                      />
+                    </div>
+                    {!preparedSend ? (
+                      <Button
+                        ref={sendSignButtonRef}
+                        className="mt-4"
+                        disabled={sendBusy}
+                        type="button"
+                        onClick={() => void signSend()}
+                      >
+                        {sendBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <ShieldCheck data-icon="inline-start" />
+                        )}
+                        {t('send.signAfterReview')}
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {preparedSend ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-300/25 bg-emerald-300/[0.04] p-4">
+                    <p className="text-sm font-bold text-emerald-100">
+                      {t('send.signedTitle')}
+                    </p>
+                    <p className="mt-2 break-all font-mono text-xs text-slate-400">
+                      {preparedSend.txid}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      {t('send.signedSummary', {
+                        inputs: preparedSend.inputCount,
+                        outputs: preparedSend.outputCount,
+                        fee: formatNitoAmount(preparedSend.feeSats),
+                      })}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        ref={sendBroadcastButtonRef}
+                        disabled={sendBusy || network?.status !== 'ready'}
+                        type="button"
+                        onClick={() => void broadcastSend()}
+                      >
+                        {sendBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <ArrowUpRight data-icon="inline-start" />
+                        )}
+                        {t('send.broadcastNow')}
+                      </Button>
+                      <Button
+                        disabled={sendBusy}
+                        type="button"
+                        variant="outline"
+                        onClick={cancelPreparedSend}
+                      >
+                        {t('send.cancelBroadcast')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </CardContent>
-            </details>
-          </Card>
+            </Card>
+          ) : null}
+
+          {activeView === 'settings' && summary.hd ? (
+            <div className="grid gap-5 xl:grid-cols-2">
+              <Card className="border border-violet-300/15 bg-violet-300/[0.025] py-0">
+                <details className="group/search">
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-violet-300/10">
+                    <div className="flex items-center gap-2">
+                      <Search
+                        className="size-4 text-violet-200"
+                        aria-hidden="true"
+                      />
+                      <div>
+                        <CardTitle className="text-base text-white">
+                          {t('settings.addressSearch')}
+                        </CardTitle>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {t('settings.addressSearchHint')}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown
+                      className="size-4 text-slate-500 transition-transform duration-200 group-open/search:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </summary>
+                  <CardContent className="border-t border-white/[0.06] px-5 pt-4 pb-5">
+                    <p className="text-xs leading-5 text-slate-500">
+                      {t('settings.addressSearchBody')}
+                    </p>
+                    <LocalizedForm
+                      className="mt-4 grid gap-3 sm:grid-cols-2"
+                      onSubmit={recoverRange}
+                    >
+                      <label className="text-xs font-semibold text-slate-300">
+                        {t('settings.account')}
+                        <select
+                          className={INPUT_CLASS}
+                          name="account"
+                          defaultValue="1"
+                        >
+                          <option value="0">
+                            {t('settings.accountStandard')}
+                          </option>
+                          <option value="1">{t('settings.accountOne')}</option>
+                        </select>
+                      </label>
+                      <label className="text-xs font-semibold text-slate-300">
+                        {t('settings.family')}
+                        <select
+                          className={INPUT_CLASS}
+                          name="accountKey"
+                          defaultValue="bech32"
+                        >
+                          {HD_ACCOUNT_TEMPLATES.map((family) => (
+                            <option key={family.key} value={family.key}>
+                              {family.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-semibold text-slate-300">
+                        {t('settings.branch')}
+                        <select
+                          className={INPUT_CLASS}
+                          name="branch"
+                          defaultValue="external"
+                        >
+                          <option value="external">
+                            {t('settings.externalBranch')}
+                          </option>
+                          <option value="internal">
+                            {t('settings.internalBranch')}
+                          </option>
+                        </select>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-xs font-semibold text-slate-300">
+                          {t('settings.from')}
+                          <input
+                            className={INPUT_CLASS}
+                            name="fromIndex"
+                            type="number"
+                            min="0"
+                            max="9999"
+                            defaultValue="20"
+                            placeholder={t('settings.fromPlaceholder')}
+                            required
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-300">
+                          {t('settings.to')}
+                          <input
+                            className={INPUT_CLASS}
+                            name="toIndex"
+                            type="number"
+                            min="0"
+                            max="9999"
+                            defaultValue="39"
+                            placeholder={t('settings.toPlaceholder')}
+                            required
+                          />
+                        </label>
+                      </div>
+                      <Button
+                        className="sm:col-span-2"
+                        disabled={recoveryBusy || network?.status !== 'ready'}
+                        type="submit"
+                      >
+                        {recoveryBusy ? (
+                          <LoaderCircle
+                            className="animate-spin"
+                            data-icon="inline-start"
+                          />
+                        ) : (
+                          <Search data-icon="inline-start" />
+                        )}
+                        {t('settings.inspectSession')}
+                      </Button>
+                    </LocalizedForm>
+                  </CardContent>
+                </details>
+              </Card>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
@@ -3049,7 +3122,7 @@ function WalletScanGate({
       <div className="w-full max-w-md text-center">
         <Image
           alt="NITO"
-          className={`mx-auto size-20 ${failed ? '' : 'motion-safe:animate-spin [animation-duration:2.8s]'}`}
+          className={`aurora-brand-logo mx-auto size-24 ${failed ? 'opacity-70 grayscale-[0.2]' : 'aurora-scan-logo'}`}
           height={80}
           preload
           src="/nito-256.png"

@@ -616,7 +616,7 @@ export function WalletAccessWorkspace() {
 
   if (activeWallet && sessionActive) {
     return (
-      <section className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
+      <section className="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         <Suspense
           fallback={
             <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center">
@@ -648,8 +648,8 @@ export function WalletAccessWorkspace() {
   if (pendingCreation) {
     const showingBackup = pendingCreation.stage === 'backup';
     return (
-      <section className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-        <Card className="border border-amber-300/20 bg-[#091221] py-0">
+      <section className="aurora-access-stage mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+        <Card className="aurora-access-card border border-amber-300/20 bg-[#091221]/95 py-0">
           <CardHeader className="px-5 pt-5">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">
               {t('backup.required')}
@@ -770,7 +770,7 @@ export function WalletAccessWorkspace() {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col px-4 py-9 sm:px-6 sm:py-14">
+    <section className="aurora-access-stage mx-auto flex w-full max-w-6xl flex-col px-4 py-9 sm:px-6 sm:py-14">
       <div className="mb-7 text-center sm:mb-10">
         <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-sky-300/15 bg-sky-300/[0.055] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-sky-200/85">
           <ShieldCheck className="size-3.5" aria-hidden="true" />
@@ -788,7 +788,7 @@ export function WalletAccessWorkspace() {
           {notice}
         </div>
       ) : null}
-      <Card className="glass-panel subtle-shine bg-transparent py-0">
+      <Card className="aurora-access-card glass-panel subtle-shine bg-transparent py-0">
         <div className="grid min-h-[470px] md:grid-cols-[280px_minmax(0,1fr)]">
           <div
             className="grid grid-cols-3 gap-1.5 border-b border-white/[0.07] bg-slate-950/20 p-2.5 md:grid-cols-1 md:content-start md:border-r md:border-b-0 md:p-4"

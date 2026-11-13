@@ -1,5 +1,5 @@
 {
   "schemaVersion": 1,
   "target": "wasm32-unknown-unknown/release/nito_wallet_crypto_web.wasm",
-  "sha256": "2dc16d539e507da1788c113ca8a5c5c9df7870b928b19d288d614ad57fda5eec"
+  "sha256": "24e393feaff0937d1794e5ea4e5072cc4796cd3f79d56676debf173fa0e77d40"
 }
