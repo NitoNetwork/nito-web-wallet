@@ -19,7 +19,6 @@ function NitoBrand() {
         alt="Nito"
         className="aurora-brand-logo size-12 shrink-0 object-contain transition-transform duration-500 group-hover/brand:-translate-y-0.5 group-hover/brand:scale-105 motion-reduce:transition-none sm:size-15"
         height={60}
-        preload
         src="/nito-256.png"
         width={60}
       />

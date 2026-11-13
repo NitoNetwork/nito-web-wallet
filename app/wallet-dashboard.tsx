@@ -3124,7 +3124,6 @@ function WalletScanGate({
           alt="NITO"
           className={`aurora-brand-logo mx-auto size-24 ${failed ? 'opacity-70 grayscale-[0.2]' : 'aurora-scan-logo'}`}
           height={80}
-          preload
           src="/nito-256.png"
           width={80}
         />

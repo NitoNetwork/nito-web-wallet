@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1 — 2026-11-13
+
+- Remove invalid Vinext image preloads while preserving the official Nito logo on access and synchronization screens.
+- Eliminate the resulting hidden production 404 without changing wallet behavior or visual rendering.
+
 ## 1.3.0 — 2026-11-13
 
 - Introduce the Aurora Core interface with the official Nito artwork, a luminous network horizon, and a desktop navigation rail.
