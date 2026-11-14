@@ -47,6 +47,9 @@ describe('wallet visual foundation', () => {
     expect(styles).not.toContain('.wallet-canvas::after');
     expect(styles).not.toContain('.aurora-hero-horizon');
     expect(dashboard).not.toContain('aurora-hero-horizon');
+    expect(styles).toContain(
+      '.aurora-balance-hero.aurora-balance-hero',
+    );
   });
 
   it('restores the synchronization spin with a reduced-motion fallback', () => {

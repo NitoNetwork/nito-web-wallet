@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.3 — 2026-11-14
+
+- Ensure the approved panoramic background remains visible through the dashboard balance card by overriding its opaque component-level surface and blur.
+
 ## 1.4.2 — 2026-11-14
 
 - Reveal the official portrait and panoramic wallet backgrounds through the interface while preserving each source image byte-for-byte and without stretching.

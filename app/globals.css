@@ -353,7 +353,7 @@
     min-width: 0;
   }
 
-  .aurora-balance-hero {
+  .aurora-balance-hero.aurora-balance-hero {
     position: relative;
     isolation: isolate;
     overflow: hidden;
