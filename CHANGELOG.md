@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.4 — 2026-11-14
+
+- Enforce the transparent dashboard balance surface after CSS minification so the official panoramic artwork remains visible in the rendered production interface.
+
 ## 1.4.3 — 2026-11-14
 
 - Ensure the approved panoramic background remains visible through the dashboard balance card by overriding its opaque component-level surface and blur.

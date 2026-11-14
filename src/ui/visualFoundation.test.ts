@@ -47,8 +47,9 @@ describe('wallet visual foundation', () => {
     expect(styles).not.toContain('.wallet-canvas::after');
     expect(styles).not.toContain('.aurora-hero-horizon');
     expect(dashboard).not.toContain('aurora-hero-horizon');
+    expect(styles).toContain(') !important;');
     expect(styles).toContain(
-      '.aurora-balance-hero.aurora-balance-hero',
+      'backdrop-filter: saturate(112%) !important;',
     );
   });
 

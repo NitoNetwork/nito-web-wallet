@@ -353,7 +353,7 @@
     min-width: 0;
   }
 
-  .aurora-balance-hero.aurora-balance-hero {
+  .aurora-balance-hero {
     position: relative;
     isolation: isolate;
     overflow: hidden;
@@ -370,12 +370,17 @@
         rgba(0, 74, 173, 0.12),
         transparent 53%
       ),
-      linear-gradient(165deg, rgba(6, 27, 58, 0.42), rgba(1, 10, 24, 0.58));
+      linear-gradient(
+        165deg,
+        rgba(6, 27, 58, 0.42),
+        rgba(1, 10, 24, 0.58)
+      ) !important;
     box-shadow:
       0 42px 100px rgba(0, 4, 15, 0.48),
       0 0 40px rgba(0, 124, 255, 0.1),
       inset 0 1px rgba(192, 234, 255, 0.11);
-    backdrop-filter: saturate(112%);
+    -webkit-backdrop-filter: saturate(112%) !important;
+    backdrop-filter: saturate(112%) !important;
   }
 
   .aurora-hero-scene {
