@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1 — 2026-11-14
+
+- Keep the desktop refresh and exit actions inside the navigation panel instead of placing them below its border.
+
 ## 1.4.0 — 2026-11-14
 
 - Use the official mobile wallet portrait background directly on phones and a faithful panoramic companion on larger screens without distorting either artwork.

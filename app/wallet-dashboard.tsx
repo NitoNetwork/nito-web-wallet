@@ -1590,12 +1590,12 @@ export function WalletDashboard({
                 </span>
               </button>
             ))}
+            <WalletSessionActions
+              placement="sidebar"
+              onLock={onLock}
+              onRefresh={() => void runManualWalletSync()}
+            />
           </nav>
-          <WalletSessionActions
-            placement="sidebar"
-            onLock={onLock}
-            onRefresh={() => void runManualWalletSync()}
-          />
         </aside>
 
         <div className="aurora-view-stack space-y-5">
