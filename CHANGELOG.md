@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.2 — 2026-11-14
+
+- Reveal the official portrait and panoramic wallet backgrounds through the interface while preserving each source image byte-for-byte and without stretching.
+- Remove the synthetic CSS horizon that obscured the approved cloud, sunlight, and blue-gold line artwork.
+
 ## 1.4.1 — 2026-11-14
 
 - Keep the desktop refresh and exit actions inside the navigation panel instead of placing them below its border.

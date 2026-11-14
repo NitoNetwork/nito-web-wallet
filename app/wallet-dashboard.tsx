@@ -1881,7 +1881,6 @@ export function WalletDashboard({
                     src="/nito-256.png"
                     width={270}
                   />
-                  <span className="aurora-hero-horizon" />
                 </div>
                 <CardContent className="aurora-balance-content relative px-7 pb-7 sm:px-10 sm:pb-10">
                   <div className="text-center">

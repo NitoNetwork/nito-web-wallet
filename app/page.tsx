@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
+import type { CSSProperties } from 'react';
 
 import { WalletLanguageSelect } from '@/components/wallet-language-select';
 import packageManifest from '@/package.json';
@@ -36,9 +37,17 @@ function NitoBrand() {
 
 function WalletPage() {
   const { t } = useI18n();
+  const walletCanvasStyle = {
+    '--wallet-background-wide':
+      'url("/nito-wallet-horizon-wide.png")',
+    '--wallet-background-portrait': 'url("/nito-wallet-horizon.png")',
+  } as CSSProperties;
 
   return (
-    <main className="wallet-canvas flex min-h-dvh flex-col text-foreground">
+    <main
+      className="wallet-canvas flex min-h-dvh flex-col text-foreground"
+      style={walletCanvasStyle}
+    >
       <header className="aurora-header top-0 z-50 border-b">
         <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-3 px-4 sm:h-22 sm:px-6 lg:px-8">
           <NitoBrand />
