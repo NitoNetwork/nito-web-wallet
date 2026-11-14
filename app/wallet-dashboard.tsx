@@ -79,6 +79,10 @@ import {
 import { revealWalletStep } from '@/src/ui/revealWalletStep';
 import { useAutoDismiss } from '@/src/ui/useAutoDismiss';
 import {
+  walletHomeBalancePresentation,
+  walletNetworkStatusLabel,
+} from '@/src/ui/walletHomeSummary';
+import {
   HdAddressManager,
   type IssuedHdAddress,
 } from '@/src/wallet/addressManager';
@@ -207,19 +211,6 @@ const defaultFamilyFor = (summary: WalletSessionSummary): HdAccountKey => {
   );
 };
 
-const networkTone = (state?: WalletNetworkState) => {
-  if (
-    state?.record?.status === 'fresh' &&
-    (state.status === 'ready' || state.status === 'scanning')
-  ) {
-    return 'bg-emerald-300 text-slate-950';
-  }
-  if (state?.status === 'stale' || state?.status === 'error') {
-    return 'border-amber-300/30 bg-amber-300/10 text-amber-100';
-  }
-  return 'border-sky-300/25 bg-sky-300/10 text-sky-100';
-};
-
 const networkTextTone = (state?: WalletNetworkState) => {
   if (
     state?.record?.status === 'fresh' &&
@@ -244,6 +235,59 @@ const networkLabel = (state: WalletNetworkState | undefined, t: Translator) => {
   return t('network.unavailable');
 };
 
+function WalletSessionActions({
+  placement,
+  onLock,
+  onRefresh,
+}: {
+  placement: 'card' | 'sidebar';
+  onLock: () => void | Promise<void>;
+  onRefresh: () => void;
+}) {
+  const { t } = useI18n();
+  if (placement === 'sidebar') {
+    return (
+      <div className="aurora-sidebar-actions mt-auto hidden flex-col items-stretch gap-1.5 border-t border-sky-200/10 pt-4 lg:flex">
+        <Button
+          className="justify-start"
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+        >
+          <RefreshCw data-icon="inline-start" />
+          {t('wallet.refresh')}
+        </Button>
+        <Button
+          className="justify-start"
+          variant="ghost"
+          size="sm"
+          onClick={() => void onLock()}
+        >
+          <LockKeyhole data-icon="inline-start" />
+          {t('wallet.exit')}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="aurora-session-actions flex items-center gap-1.5 lg:hidden">
+      <Button
+        aria-label={t('wallet.refresh')}
+        variant="ghost"
+        size="icon"
+        onClick={onRefresh}
+      >
+        <RefreshCw aria-hidden="true" />
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => void onLock()}>
+        <LockKeyhole data-icon="inline-start" />
+        {t('wallet.exit')}
+      </Button>
+    </div>
+  );
+}
+
 export function WalletDashboard({
   summary,
   autoLockMinutes,
@@ -256,7 +300,7 @@ export function WalletDashboard({
   onSensitiveRevealChange,
   onLock,
 }: WalletDashboardProps) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const translatorRef = useRef(t);
   const [activeView, setActiveView] = useState<WalletView>('home');
   const [network, setNetwork] = useState<WalletNetworkState>();
@@ -468,6 +512,9 @@ export function WalletDashboard({
   }, [deriveAddresses, summary]);
 
   const snapshot = network?.record?.snapshot;
+  const homeBalance = snapshot
+    ? walletHomeBalancePresentation(snapshot)
+    : undefined;
   const broadcastIsUnconfirmed = Boolean(
     broadcastReceipt &&
     snapshot &&
@@ -1488,35 +1535,34 @@ export function WalletDashboard({
               <span className="grid size-10 place-items-center rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.07] text-emerald-200">
                 <ShieldCheck className="size-4" aria-hidden="true" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-black tracking-tight text-white">
                   {t(sourceLabelKey(summary))}
                 </p>
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  {t('app.connectionEstablished')}
-                </p>
+                <output
+                  aria-live="polite"
+                  className={`mt-1 flex items-center gap-1.5 text-[11px] font-semibold tabular-nums ${networkTextTone(network)}`}
+                >
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-current"
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 break-words leading-relaxed">
+                    {walletNetworkStatusLabel({
+                      status: networkLabel(network, t),
+                      blockHeight: network?.blockHeight ?? 0,
+                      language,
+                      t,
+                    })}
+                  </span>
+                </output>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className={`hidden sm:inline-flex ${networkTone(network)}`}
-              >
-                {networkLabel(network, t)}
-              </Badge>
-              <Button
-                aria-label={t('wallet.refresh')}
-                variant="ghost"
-                size="icon"
-                onClick={() => void runManualWalletSync()}
-              >
-                <RefreshCw />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => void onLock()}>
-                <LockKeyhole data-icon="inline-start" />
-                {t('wallet.exit')}
-              </Button>
-            </div>
+            <WalletSessionActions
+              placement="card"
+              onLock={onLock}
+              onRefresh={() => void runManualWalletSync()}
+            />
           </div>
 
           <nav
@@ -1545,6 +1591,11 @@ export function WalletDashboard({
               </button>
             ))}
           </nav>
+          <WalletSessionActions
+            placement="sidebar"
+            onLock={onLock}
+            onRefresh={() => void runManualWalletSync()}
+          />
         </aside>
 
         <div className="aurora-view-stack space-y-5">
@@ -1872,32 +1923,33 @@ export function WalletDashboard({
                         })}
                       </p>
                     </div>
-                    <div className="aurora-balance-stat">
-                      <p className="text-sm font-semibold text-slate-300">
-                        {t('home.pending', {
-                          amount: formatNitoAmount(snapshot.unconfirmedSats),
-                        })}
-                      </p>
-                    </div>
-                    {(snapshot.immatureCoinbaseSats ?? 0) > 0 ? (
+                    {homeBalance?.showPending ? (
                       <div className="aurora-balance-stat">
-                        <p className="text-sm font-semibold text-amber-100">
-                          {t('home.immature', {
-                            amount: formatNitoAmount(
-                              snapshot.immatureCoinbaseSats ?? 0,
-                            ),
+                        <p className="text-sm font-semibold text-slate-300">
+                          {t('home.pending', {
+                            amount: formatNitoAmount(snapshot.unconfirmedSats),
                           })}
                         </p>
                       </div>
                     ) : null}
-                    <div className="aurora-balance-stat">
-                      <output
-                        aria-live="polite"
-                        className={`text-sm font-bold ${networkTextTone(network)}`}
-                      >
-                        {networkLabel(network, t)}
-                      </output>
-                    </div>
+                    {homeBalance?.showImmature ? (
+                      <div className="aurora-balance-stat flex-col gap-1">
+                        <p className="text-sm font-semibold text-amber-100">
+                          {t('home.immature', {
+                            amount: formatNitoAmount(
+                              snapshot.immatureCoinbaseSats,
+                            ),
+                          })}
+                        </p>
+                        <p className="text-xs font-medium text-amber-200/70 tabular-nums">
+                          {t('home.immatureProgress', {
+                            confirmations: homeBalance.immatureConfirmations,
+                            required: homeBalance.requiredConfirmations,
+                            blocks: homeBalance.immatureBlocksRemaining,
+                          })}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>

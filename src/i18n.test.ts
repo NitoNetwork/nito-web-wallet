@@ -292,7 +292,11 @@ describe('wallet languages', () => {
   });
 
   it('does not keep orphaned translations outside the locale files', () => {
-    const sourceFiles = [...walletTsxFiles(), 'src/i18nError.ts'];
+    const sourceFiles = [
+      ...walletTsxFiles(),
+      'src/i18nError.ts',
+      'src/ui/walletHomeSummary.ts',
+    ];
     const source = sourceFiles
       .map((file) => readFileSync(resolve(process.cwd(), file), 'utf8'))
       .join('\n');
