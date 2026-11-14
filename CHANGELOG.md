@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 — 2026-11-14
+
+- Use the official mobile wallet portrait background directly on phones and a faithful panoramic companion on larger screens without distorting either artwork.
+- Restore the rotating official Nito logo during wallet synchronization while respecting reduced-motion preferences.
+- Show the synchronized block height in the session panel and keep desktop refresh and exit actions at the bottom of the navigation rail.
+- Always show the spendable balance, reveal pending funds only when present, and report the closest immature mining reward as confirmations out of 101 with its remaining blocks.
+
 ## 1.3.2 — 2026-11-13
 
 - Replace the CSS-only access-screen logo watermark with a native Aurora glow to prevent Vinext from rewriting the asset to an unavailable static path.
