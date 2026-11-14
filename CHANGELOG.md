@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.5 — 2026-11-14
+
+- Fit the desktop home dashboard, navigation rail, and footer within the available viewport height without introducing document scrolling on compact desktop displays.
+- Compact the hero artwork and navigation spacing on low-height screens while preserving mobile layouts and scrolling for longer wallet views.
+
 ## 1.4.4 — 2026-11-14
 
 - Enforce the transparent dashboard balance surface after CSS minification so the official panoramic artwork remains visible in the rendered production interface.

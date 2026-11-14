@@ -1871,7 +1871,7 @@ export function WalletDashboard({
           ) : null}
 
           {activeView === 'home' ? (
-            <div className="grid gap-5">
+            <div className="aurora-home-view grid gap-5">
               <Card className="aurora-balance-hero aurora-card-glint glass-panel relative bg-transparent py-0">
                 <div className="aurora-hero-scene" aria-hidden="true">
                   <Image

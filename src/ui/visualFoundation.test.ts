@@ -7,6 +7,10 @@ import { describe, expect, it } from 'vitest';
 const styles = readFileSync(resolve('app/globals.css'), 'utf8');
 const page = readFileSync(resolve('app/page.tsx'), 'utf8');
 const dashboard = readFileSync(resolve('app/wallet-dashboard.tsx'), 'utf8');
+const accessWorkspace = readFileSync(
+  resolve('app/wallet-access-workspace.tsx'),
+  'utf8',
+);
 const portraitPath = resolve('public/nito-wallet-horizon.png');
 const landscapePath = resolve('public/nito-wallet-horizon-wide.png');
 
@@ -58,6 +62,24 @@ describe('wallet visual foundation', () => {
     expect(styles).toContain('animation: nito-scan-spin 2.8s linear infinite');
     expect(styles).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.aurora-scan-logo,[\s\S]*animation: none !important/u,
+    );
+  });
+
+  it('fits the desktop home dashboard between the header and footer', () => {
+    expect(accessWorkspace).toContain('wallet-dashboard-stage');
+    expect(dashboard).toContain('aurora-home-view');
+    expect(styles).toContain('--aurora-dashboard-fit-height');
+    expect(styles).toContain(
+      'calc(100dvh - 11.375rem - clamp(1.5rem, 4dvh, 4rem))',
+    );
+    expect(styles).toContain(
+      'height: var(--aurora-dashboard-fit-height)',
+    );
+    expect(styles).toContain(
+      'min-height: var(--aurora-dashboard-fit-height)',
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 1024px\) and \(max-height: 650px\)[\s\S]*\.aurora-sidebar-actions/u,
     );
   });
 });

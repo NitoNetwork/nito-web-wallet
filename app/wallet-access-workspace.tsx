@@ -616,7 +616,7 @@ export function WalletAccessWorkspace() {
 
   if (activeWallet && sessionActive) {
     return (
-      <section className="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <section className="wallet-dashboard-stage mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         <Suspense
           fallback={
             <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center">
