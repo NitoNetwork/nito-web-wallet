@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.6 — 2026-11-24
+
+- Switch the fallback ElectrumX server to electrum1.nitopool.online on WSS port 50005.
+
 ## 1.4.5 — 2026-11-14
 
 - Fit the desktop home dashboard, navigation rail, and footer within the available viewport height without introducing document scrolling on compact desktop displays.

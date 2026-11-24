@@ -26,7 +26,7 @@ describe('Nito Electrum helpers', () => {
   it('keeps the two audited public endpoints WSS-only', () => {
     expect(NITO_ELECTRUM_SERVERS).toEqual([
       { host: 'electrum1.nito.network', port: 50005, protocol: 'wss', priority: 1 },
-      { host: 'electrum1.nitopool.fr', port: 50005, protocol: 'wss', priority: 2 },
+      { host: 'electrum1.nitopool.online', port: 50005, protocol: 'wss', priority: 2 },
     ]);
     expect(
       NITO_ELECTRUM_SERVERS.map(({ host, port }) => `wss://${host}:${port}`),

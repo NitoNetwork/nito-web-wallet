@@ -31,7 +31,7 @@ requireFragments('Nginx vhost', nginx, [
   'map $upstream_http_content_security_policy $nito_wallet_csp',
   'default $upstream_http_content_security_policy',
   "script-src 'self' 'wasm-unsafe-eval'",
-  "connect-src 'self' wss://electrum1.nito.network:50005 wss://electrum1.nitopool.fr:50005",
+  "connect-src 'self' wss://electrum1.nito.network:50005 wss://electrum1.nitopool.online:50005",
   'add_header Content-Security-Policy $nito_wallet_csp always',
   'Cross-Origin-Embedder-Policy "require-corp"',
   'Cross-Origin-Opener-Policy "same-origin"',

@@ -20,7 +20,7 @@ describe('wallet security headers', () => {
     expect(headers).toContain("script-src 'self' 'wasm-unsafe-eval'");
     expect(headers).toContain("worker-src 'self'");
     expect(headers).toContain(
-      "connect-src 'self' wss://electrum1.nito.network:50005 wss://electrum1.nitopool.fr:50005",
+      "connect-src 'self' wss://electrum1.nito.network:50005 wss://electrum1.nitopool.online:50005",
     );
     expect(headers).not.toContain("'unsafe-eval'");
     expect(headers).not.toContain('https://*');
