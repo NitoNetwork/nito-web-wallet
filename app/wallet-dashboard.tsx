@@ -88,7 +88,7 @@ import {
 } from '@/src/wallet/addressManager';
 import { isTransparentUtxoSpendable } from '@/src/wallet/coinbaseMaturity';
 import { changeAccountForWallet } from '@/src/wallet/changePolicy';
-import { shouldOfferMaxForRecipient } from '@/src/wallet/sendRecipientPolicy';
+import { prepareMaxRecipients } from '@/src/wallet/sendRecipientPolicy';
 import {
   acceptedTransactionAddresses,
   walletTransactionIsUnconfirmed,
@@ -366,6 +366,7 @@ export function WalletDashboard({
   const addressManagerRef = useRef<HdAddressManager | undefined>(undefined);
   const addressOperationRef = useRef(0);
   const nextRecipientIdRef = useRef(2);
+  const sendDraftRevision = useRef(0);
   const recipientAddressRefs = useRef<Record<number, HTMLInputElement | null>>(
     {},
   );
@@ -827,6 +828,7 @@ export function WalletDashboard({
   }
 
   const invalidateSend = () => {
+    sendDraftRevision.current++;
     setSendPreview(undefined);
     setPreparedSend(undefined);
     setConsolidationPreview(undefined);
@@ -872,14 +874,8 @@ export function WalletDashboard({
     return parsed;
   };
 
-  const recipientOutputs = (targetIndex?: number): TransparentSendOutput[] =>
-    recipients.map((recipient, index) => ({
-      address: recipient.address,
-      amountSats:
-        index === targetIndex
-          ? BigInt(0)
-          : parseNitoAmountToSats(recipient.amount),
-    }));
+  const recipientOutputs = (): TransparentSendOutput[] =>
+    recipients.map(({ address, amount }) => ({ address, amountSats: parseNitoAmountToSats(amount) }));
 
   async function ensureSendChange(outputs: readonly TransparentSendOutput[]) {
     const accountKey = changeAccountForWallet(
@@ -1055,41 +1051,22 @@ export function WalletDashboard({
     }
   }
 
-  async function applyMax(targetIndex: number) {
-    if (!snapshot) return;
-    if (
-      !shouldOfferMaxForRecipient(
-        recipients,
-        targetIndex,
-        snapshot.spendableSats,
-      )
-    ) {
-      return;
-    }
+  async function applyMax(selected: number) {
+    if (!snapshot || sendBusy) return;
+    invalidateSend();
+    const revision = sendDraftRevision.current;
     setSendBusy(true);
-    setSendError(undefined);
-    setPreparedSend(undefined);
     try {
       const feePerVbyte = parseFeeRate();
-      const outputs = recipientOutputs(targetIndex);
+      const { outputs, targetIndex } = prepareMaxRecipients(recipients, selected);
       const context = await ensureSendChange(outputs);
-      const max = await calculateMaxTransparentSendAmount({
-        snapshot: context.snapshot,
-        outputs,
-        targetIndex,
-        feePerVbyte,
-        changeAddress: context.changeAddress,
+      const { amountSats } = await calculateMaxTransparentSendAmount({
+        ...context, outputs, targetIndex, feePerVbyte,
       });
-      setRecipients((current) =>
-        current.map((recipient, index) =>
-          index === targetIndex
-            ? { ...recipient, amount: satsToInputAmount(max.amountSats) }
-            : recipient,
-        ),
-      );
-      setSendPreview(undefined);
+      if (sendDraftRevision.current !== revision) return;
+      updateRecipient(recipients[selected]!.id, 'amount', satsToInputAmount(amountSats));
     } catch (caught: unknown) {
-      setSendError(translateWalletError(caught, t));
+      if (sendDraftRevision.current === revision) setSendError(translateWalletError(caught, t));
     } finally {
       setSendBusy(false);
     }
@@ -2465,22 +2442,17 @@ export function WalletDashboard({
                               )
                             }
                           />
-                          {shouldOfferMaxForRecipient(
-                            recipients,
-                            index,
-                            snapshot.spendableSats,
-                          ) ? (
-                            <button
-                              type="button"
-                              className="absolute right-2 top-1/2 mt-1 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-bold text-sky-200 hover:bg-sky-300/10 disabled:cursor-not-allowed disabled:opacity-40"
-                              disabled={
-                                !feeReady || sendBusy || snapshot.spendableSats === 0
-                              }
-                              onClick={() => void applyMax(index)}
-                            >
-                              {t('send.max')}
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            aria-label={`${t('send.max')} · ${t('send.recipient', { index: index + 1 })}`}
+                            className="absolute right-2 top-1/2 mt-1 min-h-8 min-w-10 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-bold text-sky-200 hover:bg-sky-300/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            disabled={
+                              !feeReady || sendBusy || snapshot.spendableSats === 0
+                            }
+                            onClick={() => void applyMax(index)}
+                          >
+                            {t('send.max')}
+                          </button>
                         </div>
                       </label>
                       <div className="flex items-end justify-end">

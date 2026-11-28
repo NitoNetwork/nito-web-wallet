@@ -1,44 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { prepareMaxRecipients } from './sendRecipientPolicy';
 
-import { shouldOfferMaxForRecipient } from './sendRecipientPolicy';
+describe('recipient amounts for MAX', () => {
+  const recipients = ['5000', '', '5000', '5000'].map((amount, i) => ({ address: String(i), amount }));
 
-describe('multi-recipient MAX policy', () => {
-  it('offers MAX on the only recipient', () => {
-    expect(shouldOfferMaxForRecipient([{ amount: '' }], 0, 0)).toBe(true);
+  it.each([0, 1, 2, 3])('fills row %i and preserves the amounts on either side', (selected) => {
+    const { outputs, targetIndex } = prepareMaxRecipients(recipients, selected);
+    expect(outputs[targetIndex]).toEqual({ address: String(selected), amountSats: BigInt(0) });
+    expect(outputs.filter((_, i) => i !== targetIndex)).toEqual(
+      recipients.filter((row, i) => i !== selected && row.amount).map(row =>
+        ({ address: row.address, amountSats: BigInt(500_000_000_000) })),
+    );
   });
 
-  it('offers MAX only on the last recipient after every preceding amount is valid', () => {
-    const recipients = [{ amount: '0.1' }, { amount: '0.2' }, { amount: '' }];
-
-    expect(shouldOfferMaxForRecipient(recipients, 0, 100_000_000)).toBe(false);
-    expect(shouldOfferMaxForRecipient(recipients, 1, 100_000_000)).toBe(false);
-    expect(shouldOfferMaxForRecipient(recipients, 2, 100_000_000)).toBe(true);
-  });
-
-  it('hides MAX again when a preceding amount is cleared or invalid', () => {
-    expect(
-      shouldOfferMaxForRecipient(
-        [{ amount: '' }, { amount: '' }],
-        1,
-        100_000_000,
-      ),
-    ).toBe(false);
-    expect(
-      shouldOfferMaxForRecipient(
-        [{ amount: '0.000000001' }, { amount: '' }],
-        1,
-        100_000_000,
-      ),
-    ).toBe(false);
-  });
-
-  it('hides MAX when fixed recipients leave no spendable output', () => {
-    expect(
-      shouldOfferMaxForRecipient(
-        [{ amount: '0.999995' }, { amount: '' }],
-        1,
-        100_000_000,
-      ),
-    ).toBe(false);
+  it('requires the selected address and preserves invalid drafts for correction', () => {
+    expect(() => prepareMaxRecipients([{ address: '', amount: '' }], 0)).toThrow();
+    for (const other of [{ address: '', amount: '5' }, { address: 'a', amount: 'bad' }]) {
+      expect(() => prepareMaxRecipients([recipients[0]!, other], 0)).toThrow();
+    }
   });
 });
