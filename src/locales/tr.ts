@@ -198,6 +198,7 @@ export const tr = {
   "send.max": "MAKS.",
   "send.addRecipient": "Alıcı ekle",
   "send.networkFees": "Ağ ücretleri",
+  "send.fallbackFee": "Yedek oran",
   "send.automatic": "Otomatik",
   "send.customValue": "Özel değer",
   "send.expert": "Uzman",

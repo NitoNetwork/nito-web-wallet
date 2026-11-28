@@ -198,6 +198,7 @@ export const ru = {
   "send.max": "МАКС.",
   "send.addRecipient": "Добавить получателя",
   "send.networkFees": "Комиссия сети",
+  "send.fallbackFee": "Резервная ставка",
   "send.automatic": "Автоматически",
   "send.customValue": "Своё значение",
   "send.expert": "Эксперт",

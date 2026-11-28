@@ -198,6 +198,7 @@ export const es = {
   "send.max": "MÁX.",
   "send.addRecipient": "Añadir destinatario",
   "send.networkFees": "Comisiones de red",
+  "send.fallbackFee": "Tarifa de respaldo",
   "send.automatic": "Automático",
   "send.customValue": "Valor personalizado",
   "send.expert": "Experto",

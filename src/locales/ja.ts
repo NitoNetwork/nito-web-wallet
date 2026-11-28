@@ -198,6 +198,7 @@ export const ja = {
   "send.max": "最大",
   "send.addRecipient": "受取人を追加",
   "send.networkFees": "ネットワーク手数料",
+  "send.fallbackFee": "代替手数料率",
   "send.automatic": "自動",
   "send.customValue": "カスタム値",
   "send.expert": "上級者",

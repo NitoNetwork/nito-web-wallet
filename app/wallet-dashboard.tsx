@@ -313,6 +313,11 @@ export function WalletDashboard({
   const [sendBusy, setSendBusy] = useState(false);
   const [sendError, setSendError] = useState<string>();
   const [feeRate, setFeeRate] = useState(DEFAULT_FEE_PER_VBYTE.toString());
+  const [automaticFee, setAutomaticFee] = useState<{
+    scope: string;
+    rate: bigint;
+    fallback: boolean;
+  }>();
   const [customFeeEnabled, setCustomFeeEnabled] = useState(false);
   const [recipients, setRecipients] = useState<RecipientDraft[]>([
     { id: 1, address: '', amount: '' },
@@ -512,6 +517,34 @@ export function WalletDashboard({
   }, [deriveAddresses, summary]);
 
   const snapshot = network?.record?.snapshot;
+  const spendableUtxoCount =
+    snapshot?.utxos.filter(isTransparentUtxoSpendable).length ?? 0;
+  const needsFee = activeView === 'send' || (activeView === 'home' && spendableUtxoCount >= 21);
+  const feeScope = needsFee && network?.record?.status === 'fresh'
+    ? JSON.stringify([summary.sessionId, network.record.serverUrl, activeView])
+    : undefined;
+  const quotedFee = automaticFee?.scope === feeScope ? automaticFee : undefined;
+  const feeReady = customFeeEnabled || quotedFee !== undefined;
+
+  // Quote once when the fee form opens and pin its rate through preview and signing.
+  useEffect(() => {
+    const controller = controllerRef.current;
+    if (!feeScope || !controller) return;
+    let active = true;
+    void controller.estimateHighPriorityFeeRate().then(
+      (rate) => {
+        if (active) setAutomaticFee({ scope: feeScope, rate, fallback: false });
+      },
+      () => {
+        if (active) setAutomaticFee({ scope: feeScope, rate: DEFAULT_FEE_PER_VBYTE, fallback: true });
+      },
+    );
+    return () => {
+      active = false;
+      setAutomaticFee(undefined);
+    };
+  }, [feeScope]);
+
   const homeBalance = snapshot
     ? walletHomeBalancePresentation(snapshot)
     : undefined;
@@ -825,7 +858,10 @@ export function WalletDashboard({
   };
 
   const parseFeeRate = () => {
-    if (!customFeeEnabled) return DEFAULT_FEE_PER_VBYTE;
+    if (!customFeeEnabled) {
+      if (!quotedFee) throw new TransparentSendError('invalid-fee-rate');
+      return quotedFee.rate;
+    }
     if (!/^\d+$/u.test(feeRate)) {
       throw new TransparentSendError('invalid-fee-rate');
     }
@@ -1451,8 +1487,6 @@ export function WalletDashboard({
 
   const coverage =
     snapshot?.coverage.filter((item) => item.mode === 'gap') ?? [];
-  const spendableUtxoCount =
-    snapshot?.utxos.filter(isTransparentUtxoSpendable).length ?? 0;
   const receiveAvailable = Boolean(receiveAddress);
   const navigation = [
     { key: 'home' as const, label: t('nav.home'), icon: House },
@@ -1977,7 +2011,7 @@ export function WalletDashboard({
                     {!consolidationPreview ? (
                       <Button
                         className="mt-4"
-                        disabled={sendBusy || network?.status !== 'ready'}
+                        disabled={!feeReady || sendBusy || network?.status !== 'ready'}
                         type="button"
                         variant="outline"
                         onClick={() => void previewConsolidation()}
@@ -2440,7 +2474,7 @@ export function WalletDashboard({
                               type="button"
                               className="absolute right-2 top-1/2 mt-1 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-bold text-sky-200 hover:bg-sky-300/10 disabled:cursor-not-allowed disabled:opacity-40"
                               disabled={
-                                sendBusy || snapshot.spendableSats === 0
+                                !feeReady || sendBusy || snapshot.spendableSats === 0
                               }
                               onClick={() => void applyMax(index)}
                             >
@@ -2509,7 +2543,7 @@ export function WalletDashboard({
                           <p className="mt-1 text-slate-500">
                             {customFeeEnabled
                               ? `${feeRate || '—'} sats/vByte · ${t('send.customValue')}`
-                              : `${t('send.automatic')} · ${DEFAULT_FEE_PER_VBYTE.toString()} sats/vByte`}
+                              : `${quotedFee?.fallback ? t('send.fallbackFee') : t('send.automatic')} · ${quotedFee?.rate.toString() ?? '…'} sats/vByte`}
                           </p>
                         </div>
                         <Badge
@@ -2569,6 +2603,7 @@ export function WalletDashboard({
                     disabled={
                       sendBusy ||
                       network?.status !== 'ready' ||
+                      !feeReady ||
                       !snapshot?.spendableSats
                     }
                     type="submit"
@@ -2609,7 +2644,7 @@ export function WalletDashboard({
                       />
                       <SendMetric
                         label={t('send.metricFee')}
-                        value={`${formatNitoAmount(sendPreview.estimate.feeSats)} NITO`}
+                        value={`${formatNitoAmount(sendPreview.estimate.feeSats)} NITO · ${sendPreview.feePerVbyte.toString()} sats/vByte`}
                       />
                       <SendMetric
                         label={t('send.metricInputsOutputs', {

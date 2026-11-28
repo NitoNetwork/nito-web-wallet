@@ -116,6 +116,11 @@ describe('Nito Electrum helpers', () => {
     await expect(client.estimateFeeRate(1)).resolves.toBe(BigInt(2));
     expect(requestSpy).toHaveBeenCalledWith('blockchain.estimatefee', [1]);
 
+    for (const [estimate, rate] of [[0.00005, 5], [0.00001, 1], [0.000051, 6]]) {
+      requestSpy.mockResolvedValueOnce(estimate);
+      await expect(client.estimateFeeRate(1)).resolves.toBe(BigInt(rate));
+    }
+
     requestSpy.mockResolvedValueOnce(-1);
     await expect(client.estimateFeeRate(1)).rejects.toBeInstanceOf(
       ElectrumInvalidResponseError,

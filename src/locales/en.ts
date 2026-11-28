@@ -196,6 +196,7 @@ export const en = {
   "send.max": "MAX",
   "send.addRecipient": "Add a recipient",
   "send.networkFees": "Network fees",
+  "send.fallbackFee": "Fallback rate",
   "send.automatic": "Automatic",
   "send.customValue": "Custom value",
   "send.expert": "Expert",

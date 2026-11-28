@@ -198,6 +198,7 @@ export const zh = {
   "send.max": "最大",
   "send.addRecipient": "添加收款人",
   "send.networkFees": "网络费用",
+  "send.fallbackFee": "备用费率",
   "send.automatic": "自动",
   "send.customValue": "自定义数值",
   "send.expert": "专家",

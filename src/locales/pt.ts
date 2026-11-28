@@ -198,6 +198,7 @@ export const pt = {
   "send.max": "MÁX.",
   "send.addRecipient": "Adicionar destinatário",
   "send.networkFees": "Taxas de rede",
+  "send.fallbackFee": "Taxa de reserva",
   "send.automatic": "Automático",
   "send.customValue": "Valor personalizado",
   "send.expert": "Avançado",
