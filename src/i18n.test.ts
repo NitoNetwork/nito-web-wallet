@@ -276,10 +276,10 @@ describe('wallet languages', () => {
       'utf8',
     );
 
-    expect(source).toContain('document.documentElement.clientWidth');
-    expect(source).toContain('TOOLTIP_VIEWPORT_MARGIN');
-    expect(source).toContain('className={`fixed z-50');
-    expect(source).not.toContain('right-[-2rem]');
+    expect(source).toContain('createPortal(');
+    expect(source).toContain('document.body');
+    expect(source).toContain('positionInfoTip(');
+    expect(source).not.toContain('onPointerEnter');
   });
 
   it('gives every icon-only narrow-screen tab an accessible name', () => {
